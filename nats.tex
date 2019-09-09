@@ -1,0 +1,101 @@
+\documentclass{beamer}
+
+\usepackage{amssymb}
+\usefonttheme{serif}
+
+
+\newcommand{\Nat}{\mathbb{N}}
+
+\title{What About the Natural Numbers?}%\texorpdfstring{$\mathbb{N}$}}
+\subtitle{JMCT}
+\date{}
+
+\usetheme{jmct}
+
+\begin{document}
+	\frame {
+		\titlepage
+	}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Intro
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+  \frame {
+    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$}
+  }
+  %%%%%%%
+  % What are they?
+  %
+  % We actually see them here! We just counted things, _that's_
+  % the natural number.
+  \frame{
+    \frametitle{What \emph{are} they?}
+    The \emph{Natural} numbers have a few definitions:
+    \begin{enumerate}
+      \item<2-> Set Theoretic
+      \item<3> Peano Axioms
+    \end{enumerate}
+  }
+
+  %%%%%%%
+  % Set Theoretic
+  %
+  \frame{
+    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
+  }
+  \frame{
+    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
+
+    Several possible Set-theoretic definitions, von Neumann proposed the
+    following:
+    \begin{itemize}
+      \item<2 -> $0 = \{\}$
+      \item<3 -> $1 = 0 \cup \{0\}$
+      \item<4  > $2 = 1 \cup \{1\}$
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
+
+    Several possible Set-theoretic definitions, von Neumann proposed the
+    following:
+    \begin{itemize}
+      \item<1 -> $0 = \{\}$
+      \item<1 -> $1 = 0 \cup \{0\} = \{0\} = \{\{\}\}$
+      \item<1  > $2 = 1 \cup \{1\} = \{0,1\} = \{\{\},\{\{\}\}\}$
+    \end{itemize}
+  }
+  %%%%%%%
+  % Peano Axioms
+  %
+  % That's pretty complicated
+  %
+  % Turns our that there is a simpler way
+  \frame{
+    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
+
+    \centering {\huge oof}
+
+  }
+  \frame{
+    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
+
+    In 1889 Giuseppe Peano published\par
+    \vspace{0.5cm}
+
+    ``The principles of arithmetic presented by a new method''
+
+  }
+  \frame{
+    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
+
+    The two axioms we care about most (right now) are simple enough:
+    \begin{itemize}
+      \item <2 -> $0 \in \mathbb{N}$
+      \item <3 -> $\forall n \in \Nat\ldotp S(n) \in \Nat$
+    \end{itemize}
+
+  }
+\end{document}
