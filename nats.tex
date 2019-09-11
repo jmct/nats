@@ -1,10 +1,18 @@
 \documentclass{beamer}
 
 \usepackage{amssymb}
+\usepackage{fancyvrb}
+\usepackage{stmaryrd}
 \usefonttheme{serif}
 
 
 \newcommand{\Nat}{\mathbb{N}}
+
+\SaveVerb{zer}=Z=
+\SaveVerb{suc}=Succ n=
+\SaveVerb{thr}=Succ (Succ (Succ Z))=
+\SaveVerb{ele}=Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ Z))))))))))=
+\SaveVerb{enn}=n=
 
 \title{What About the Natural Numbers?}%\texorpdfstring{$\mathbb{N}$}}
 \subtitle{JMCT}
@@ -12,19 +20,122 @@
 
 \usetheme{jmct}
 
+\usepackage{calc}
+
+\newcommand{\textover}[3][l]{%
+ % #1 is the alignment, default l
+ % #2 is the text to be printed
+ % #3 is the text for setting the width
+ \makebox[\widthof{#3}][#1]{#2}%
+ }
+
+\newcommand{\blueit}[1]{%
+  {\color{dark-lucid-blue}#1}%
+}
+\newcommand{\blueite}[1]{%
+  \blueit{\emph{#1}}%
+}
+
+
+\newcommand{\myquote}[3]{
+  ``#1''
+  \vspace{3pt}
+  \hrule
+  \begin{flushright}
+  --- \blueit{\emph{#2}}, \emph{#3}
+  \end{flushright}
+}
+
 \begin{document}
 	\frame {
 		\titlepage
 	}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %%% Intro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
   \frame {
-    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$}
+    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$\phantom{?}}
   }
+  \frame {
+    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$?}
+  }
+
+
+  \frame {
+    \myquote{Some thirty years into the history of
+      machine-independent programming language design, the treatment of numbers
+      is still problematic.}{Colin Runciman}{1989}
+  }
+  \frame {
+    \myquote{Some \textover[c]{\blueit{sixty}}{thirty} years into the history of
+      machine-independent programming language design, the treatment of numbers
+      is still problematic.}{Me}{just now}
+  }
+  \frame{
+    \frametitle{Main takeaway}
+    The number system we use should relate to the structures of the problem
+    we're solving.
+  }
+  \frame{
+    \frametitle{Main takeaway}
+    For some domains, the use of Reals\footnote{or their approximation via
+    \texttt{Float}s} may be appropriate:
+    \begin{itemize}
+      \item<2 -> e.g. physics calculations involving volume, speed, or mass
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Main takeaway}
+    \emph{Many} problems \blueit{Integers} are appropriate:
+    \begin{itemize}
+      \item<2 -> Fixed-precision DSP
+      \item<3 -> Bank account balance :'(
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Main takeaway}
+    Runciman's argument:\newline
+    \hangindent=0.7cm
+    For many of the discrete structures involved in the
+    day-to-day practice of programming, the \blueit{natural} numbers are
+    the most appropriate number system.
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Outline
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+  %%%%%%%
+  % Goals
+  %
+  \frame{
+    \frametitle{\#goals}
+    \begin{enumerate}
+      \item<2 -> Show you that the [lazy?] $\mathbb{N}$s are \blueite{Good}
+                 and \blueite{Proper}
+      \item<3 -> Demonstrate that even \emph{simple} choices of types
+                 for an API have deep consequences
+      \item<4 -> Have you asking ``What about the Natural Numbers?''
+                 next time you create an API.
+    \end{enumerate}
+  }
+  %%%%%%%
+  % Actual Outline
+  %
+  \frame{
+    \frametitle{Shape of things to come}
+    \begin{enumerate}
+      \item<2 -> Overview of the $\mathbb{N}$s themselves
+      \item<3 -> Programming with \texttt{Nat}
+      \item<4 -> Arithmetic with \texttt{Nat} and properties we care about
+      \item<5 -> How does \texttt{Nat} influence API design?
+      \item<6 -> Beyond \texttt{Nat}
+      \item<7 -> Conclude
+    \end{enumerate}
+  }
+
   %%%%%%%
   % What are they?
   %
@@ -67,6 +178,7 @@
       \item<1  > $2 = 1 \cup \{1\} = \{0,1\} = \{\{\},\{\{\}\}\}$
     \end{itemize}
   }
+
   %%%%%%%
   % Peano Axioms
   %
@@ -98,4 +210,135 @@
     \end{itemize}
 
   }
+
+  %%%%%%%
+  % Data!
+  %
+  \frame{
+    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
+
+    Okay, but we're concerned with the \emph{practice} of \emph{programming} \dots
+  }
+  \begin{frame}[fragile]
+    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+ type Nat where
+   Z    : Nat
+   Succ : Nat -> Nat
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
+    Now we can easily represent any $\Nat$ we want!
+    {\color{dark-gray}
+      \begin{align*}
+      \hfill \\
+      \hfill
+      \end{align*}
+    }
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
+    Now we can easily represent any $\Nat$ we want!
+    {\color{dark-gray}
+      \begin{align*}
+      \llbracket \UseVerb{zer} \rrbracket &= \blueit{0}\\
+      \llbracket \UseVerb{suc} \rrbracket &= \blueit{1~+~} \llbracket \UseVerb{enn} \rrbracket
+      \end{align*}
+    }
+  \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Construction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+  \frame{
+    \frametitle{Talk over?}
+    This is all very nice and elegant, but the ergonomics \emph{suck}
+  }
+
+  \begin{frame}[fragile]
+    \frametitle{RSI risk}
+    Even just typing this slide made my RSI flare up:
+    \begin{itemize}
+      \item $\blueit{3}  \Rightarrow $ {\color{dark-gray}\UseVerb{thr}}
+      \item $\blueit{11} \Rightarrow $ {\color{dark-gray}\UseVerb{ele}}
+    \end{itemize}
+  \end{frame}
+
+  %%%%%%%
+  % Our friend, the list!
+  %
+  \frame{
+    \frametitle{Spoonful of sugar}
+    What do we do for other types?
+  }
+  \begin{frame}[fragile]
+    \frametitle{Spoonful of sugar}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+ type List elem where
+   []   : List elem
+   (::) : elem -> List elem -> List elem
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Spoonful of sugar}
+    Lists are flexible and easy to reason about, but they have the same problem!
+    \begin{itemize}
+      \item<2 -> {\color{dark-gray} \verb-type String = List Char-}
+      \item<3  > {\color{dark-gray} \verb-initials = 'P' :: ('W' :: ('L' :: []))-}
+    \end{itemize}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Spoonful of sugar}
+    Because of this ubiquity of lists, compiler writers quickly came up with syntactic sugar for them:
+    \begin{itemize}
+      \item<2 -> {\color{dark-gray} \verb-"PWL"- $\Rightarrow$ \verb-'P' :: ('W' :: ('L' :: []))-}
+      \item<3  > {\color{dark-gray} \verb-[1..3]- $\Rightarrow$ \verb-'1' :: ('2' :: ('3' :: []))-}
+    \end{itemize}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Spoonful of sugar}
+    Similarly, we can implement syntactic sugar for the natural numbers:
+    \begin{itemize}
+      \item<2 -> {\color{dark-gray} \verb-3- $\Rightarrow$ \UseVerb{thr}}
+    \end{itemize}
+  \end{frame}
+  %%%%%%%
+  % We still maintain our reasoning power
+  %
+  \frame{
+    \frametitle{Spoonful of sugar}
+    We lose nothing with the syntactic sugar, we can still pattern match on naturals and
+    retain all of our inductive reasoning.
+  }
+  \frame{
+  }
+
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Conclusion
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+  \frame{
+    \frametitle{Smash that subscribe button}
+      Thanks for your time!
+
+      You can read more of my rants \blueit{@josecalderon}
+  }
+
+  \frame {
+    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$!}
+  }
+
 \end{document}
