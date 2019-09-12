@@ -3,6 +3,7 @@
 \usepackage{amssymb}
 \usepackage{fancyvrb}
 \usepackage{stmaryrd}
+\usepackage{graphicx}
 \usefonttheme{serif}
 
 
@@ -102,10 +103,22 @@
     day-to-day practice of programming, the \blueit{natural} numbers are
     the most appropriate number system.
   }
+  \frame{
+    \frametitle{How?}
+    In the process of exploring the Natural Numbers, we'll be developing an API.
+    As we progress we'll see how different representations affect our API.
+  }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %%% Outline
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+      %* Overview of the $\mathbb{N}$s themselves
+      %* Programming with \texttt{Nat}
+      %* Arithmetic with \texttt{Nat} and properties we care about
+      %* How does \texttt{Nat} influence API design?
+      %* Beyond \texttt{Nat}
+      %* Conclude
 
   %%%%%%%
   % Goals
@@ -322,7 +335,259 @@
     We lose nothing with the syntactic sugar, we can still pattern match on naturals and
     retain all of our inductive reasoning.
   }
+  \begin{frame}[fragile]
+    \frametitle{Natural usage}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+    ... if length xs <= 5
+        then ...
+        else ...
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Pattern Matching still available...}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+(<=) : Nat -> Nat -> Bool
+Z               _ = True
+(Succ _)        Z = False
+(Succ x) (Succ y) = x <= y
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Arithmetic
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
   \frame{
+    \frametitle{Reading, Writing and ...}
+    \begin{enumerate}
+      \item<2 -> Programmers expect some arithmetic `out of the box'
+                  when dealing with numbers.
+      \item<3 -> At the very least they expect \blueit{$+$}, \blueit{$-$}, \blueit{$\times$}, \blueit{$\div$}
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Real data structures}
+    When programming with the discrete structures which are common in programming,
+    there is a correspondence between the operations on numbers and the operations
+    on the data structures.
+    \begin{enumerate}
+      \item<2 -> Think `array indices', or `size'
+      \item<3 -> What would a \blueite{negative} size mean?
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Who would even do that?}
+  }
+  \frame{
+    \frametitle{Who would even do that?}
+    \begin{figure}
+      \centering
+      \includegraphics[width=0.5\textwidth]{figs/length.png}
+      \caption{lol}
+    \end{figure}
+  }
+  \frame{
+    \frametitle{Exceptional negatives}
+    Think of how many APIs return an ``\blueit{\texttt{Int}}''.
+    \begin{enumerate}
+      \item <2> How many of these APIs only use the negative numbers to signal errors?
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{What do we want?}
+    If we think a bit about arithmetic we may conclude the following:
+    \begin{enumerate}
+      \item<2 -> Ideally, our operators would be \blueite{total}
+      \item<3 -> When possible, we want our operators to be \blueite{closed}
+    \end{enumerate}
+  }
+  \begin{frame}[fragile]
+    \frametitle{Why?}
+    These properties, when combined, allow us to be confident that when we
+    operate on two \verb-Nat-s, we get another \verb-Nat-.
+    \begin{enumerate}
+      \item<2 -> This isn't true for arithmetic over all number systems (nor should it be!)
+      \item<3 -> Many languages fail even where it should be!
+    \end{enumerate}
+  \end{frame}
+  \frame{
+    \frametitle{Totality}
+    Our functions being \blueite{total} gives us confidence that for any input, we
+    get a result.
+  }
+  \frame{
+    \frametitle{Closure}
+    Our functions being \blueite{closed} means that the result values lie within the
+    same number system as their arguments.
+  }
+  \frame{
+    \frametitle{What do we want? (part 2)}
+    \myquote{The aim is a total closed system of arithmetic with results that
+             can be safely interpreted in the context of the discrete
+             structures in general programming}{Colin Runciman}{1989}
+  }
+  \frame{
+    \frametitle{Back to arithmetic}
+    Addition and Multiplication present no difficulties.
+  }
+  \frame{
+    \frametitle{Back to arithmetic}
+    What about Subtraction?
+  }
+  \begin{frame}[fragile]
+    \frametitle{Don't wait, saturate}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+(.-.) : Nat -> Nat -> Nat
+n        .-.        Z = n
+Z        .-.        _ = Z
+(Succ n) .-. (Succ m) = n .-. m
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \frame{
+    \frametitle{Relate back to data structures}
+  }
+  \begin{frame}[fragile]
+    \frametitle{Relate back to data structures}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+drop : Nat -> List a -> List a
+drop Z        xs      = xs
+drop _        []      = []
+drop (Succ n) (x::xs) = drop n xs
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Relate back to data structures}
+    We \emph{want} a correspondence between operations on data structures and
+    on numbers:
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+length (drop n xs) === length xs .-. n
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \frame{
+    \frametitle{Relate back to data structures}
+    These sorts of correspondences are what we use (often in our head) when
+    programming or refactoring.
+  }
+  \frame{
+    \frametitle{A divisive issue}
+    Unlike Subtraction, division is \emph{already} closed over Natural Numbers
+  }
+  \frame{
+    \frametitle{A divisive issue}
+    Unlike Subtraction, division is \emph{already} closed over Natural Numbers
+    (for the cases for which it is defined!)
+  }
+  \frame{
+    \frametitle{Back to square zero}
+    Some mathematicians define the Natural Numbers as starting from One! Would
+    that save us from this issue?
+  }
+  \frame{
+    \frametitle{Back to square zero}
+    Maybe, but then we'd lose the important correspondence with real data
+    structures.
+  }
+  \frame{
+    \frametitle{Quick digression}
+  }
+  \frame{
+    \frametitle{Quick digression}
+    Zero is not nothing!
+  }
+  \frame{
+    \frametitle{Two solutions}
+    Runciman proposes two solutions to the `division by zero' problem:
+    \begin{enumerate}
+      \item<2 -> based on viewing division on $\mathbb{N}$s as `slicing'
+      \item<3 -> based on using lazy \texttt{Nat}s
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Division as slicing}
+    Think of dividing \texttt{x} by \texttt{y} as cutting \texttt{x} in
+    \texttt{y} places.
+  }
+  \begin{frame}[fragile]
+    \frametitle{Division as slicing}
+    We can write a total division, \texttt{//}, in terms of a partial (fails when dividing by zero)
+    division, \texttt{/}:
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+x // y = x / (Succ y)
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \begin{frame}[fragile]
+    \frametitle{Division as slicing}
+    We can write a total division, \texttt{//}, in terms of a partial (fails when dividing by zero)
+    division, \texttt{/}:
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+x // y = x / (Succ y)
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \frame{
+    \frametitle{Umm...}
+    We get one intuitive property
+    \begin{itemize}
+      \item<2 -> Slicing zero times gets you the original thing back
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{... that's wrong}
+    At the cost of it being correct at every other \texttt{Nat}
+  }
+  \begin{frame}[fragile]
+    \frametitle{Let's fix it}
+    We get back correctness by subtracting $1$ from the divisor before passing it
+    \texttt{//}
+    \begin{figure}
+    {\color{dark-gray}
+      \centering
+\begin{BVerbatim}
+x ./. y = x // (y .-. 1)
+\end{BVerbatim}
+    }
+    \end{figure}
+  \end{frame}
+  \frame{
+    \frametitle{You coward!}
+    In a sense we've only side-stepped the problem!
+    \begin{itemize}
+      \item<2 -> If you think this is the lazy solution...
+    \end{itemize}
   }
 
     
