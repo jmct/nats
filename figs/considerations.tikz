@@ -3,7 +3,7 @@
 % Use with:               \input{figs/considerations.tikz}
 \begin{tikzpicture}[
   axis/.style={lucid-blue, line width=1pt, line cap=round},
-  head/.style={my-magenta, font=\Large, inner sep=1pt},
+  head/.style={dark-gray, font=\Large, inner sep=1pt},
   item/.style={my-magenta, font=\small, align=center, inner sep=1pt},
 ]
   %% ---- axes --------------------------------------------------------------
@@ -11,10 +11,10 @@
   \draw[axis] (-4.2,  0.0) -- ( 5.0,  0.0);
 
   %% ---- axis labels -------------------------------------------------------
-  \node[head, rotate= 2] at (-2.0,  3.2) {Mutexes / locks};
-  \node[head, rotate=-3] at ( 2.7,  3.4) {Atomic operations};
-  \node[head, rotate= 4] at (-4.5,  1.4) {Good};
-  \node[head, rotate=-5] at (-4.5, -1.5) {Bad};
+  \node[head] at (-2.0,  3.2) {Mutexes / locks};
+  \node[head] at ( 2.7,  3.4) {Atomic operations};
+  \node[head] at (-4.5,  1.4) {Good};
+  \node[head] at (-4.5, -1.5) {Bad};
 
   %% ---- mutexes, good -----------------------------------------------------
   \node[item, rotate= 7] at (-1.4,  2.2) {protects arbitrary\\structures};

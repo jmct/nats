@@ -116,34 +116,6 @@
     Importantly, this enforces \blueite{serialization}.
     \diagram[0.9]{figs/mutex.tikz}
   }
-  \begin{frame}[fragile]
-    \frametitle{Atomic Operations}
-    \begin{itemize}
-      \item Hardware-supported \emph{indivisible} operations on memory
-    \end{itemize}
-    \vspace{1em}
-    \begin{codeblock}[fontsize=\footnotesize]
-void atomic_max(atomic_int *target, int val) {
-
-  int current = atomic_load(target);
-  while (value > current) {
-    if (atomic_compare_exchange_weak(target, &current, value)) {
-      break;
-    }
-  }
-}
-    \end{codeblock}
-  \end{frame}
-
-  \frame{
-    \frametitle{Atomic Truth Bombs}
-    \begin{itemize}
-      \item<2 -> This is awesome!
-      \item<3 -> Only works on small amounts of memory (often small-N\# of machine words)
-      \item<4 -> Reality: Data-structure often large-N\# of machine words
-      \item<5 -> Therefore, getting lock-free data structures right is very hard!
-    \end{itemize}
-  }
   \frame{
     \frametitle{Coarse}
     One lock for the whole tree
@@ -196,6 +168,34 @@ void atomic_max(atomic_int *target, int val) {
     \begin{itemize}
       \item<2 -> but it's \blueite{one word} at a time
       \item<3 -> and every data structure becomes a research paper
+    \end{itemize}
+  }
+  \begin{frame}[fragile]
+    \frametitle{Atomic Operations}
+    \begin{itemize}
+      \item Hardware-supported \emph{indivisible} operations on memory
+    \end{itemize}
+    \vspace{1em}
+    \begin{codeblock}[language=C,basicstyle=\ttfamily\footnotesize]
+void atomic_max(atomic_int *target, int val) {
+
+  int current = atomic_load(target);
+  while (value > current) {
+    if (atomic_compare_exchange_weak(target, &current, value)) {
+      break;
+    }
+  }
+}
+    \end{codeblock}
+  \end{frame}
+
+  \frame{
+    \frametitle{Atomic Truth Bombs}
+    \begin{itemize}
+      \item<2 -> This is awesome!
+      \item<3 -> Only works on small amounts of memory (often small-N\# of machine words)
+      \item<4 -> Reality: Data-structure often large-N\# of machine words
+      \item<5 -> Therefore, getting lock-free data structures right is very hard!
     \end{itemize}
   }
   \frame{
@@ -294,68 +294,6 @@ void atomic_max(atomic_int *target, int val) {
       \item<3 -> This is \blueite{software} transactional memory, and you can
                  build it in a library
     \end{itemize}
-  }
-  \frame{
-    \frametitle{The hardware is already keeping a log}
-    Every core has a cache, and the coherence protocol already tracks
-    which core has which line, and whether it has written to it.
-    \begin{itemize}
-      \item<2 -> That \emph{is} a read set and a write set
-      \item<3 -> Herlihy \& Moss: so let the cache be the log
-    \end{itemize}
-  }
-  \begin{frame}[fragile]
-    \frametitle{Herlihy \& Moss, 1993}
-    Six new instructions:
-    \begin{codeblock}
-LT        load-transactional
-LTX       load-transactional-exclusive
-ST        store-transactional
-COMMIT    make the tentative writes real
-ABORT     throw them away
-VALIDATE  will I still be able to commit?
-    \end{codeblock}
-  \end{frame}
-  \frame{
-    \frametitle{Tentative}
-    Transactional loads and stores are \blueite{tentative}:
-    \begin{itemize}
-      \item<2 -> the values live in a small \blueite{transactional cache}
-      \item<3 -> nobody else can see them until \code{COMMIT}
-      \item<4 -> \code{ABORT} just empties that cache
-    \end{itemize}
-  }
-  \begin{frame}[fragile]
-    \frametitle{A counter, transactionally}
-    \begin{codeblock*}
-loop:
-\uncover<2->{  old = LTX(&counter)}
-\uncover<3->{  ST(&counter, old + 1)}
-\uncover<4->{  if COMMIT() then return}
-\uncover<5->{  goto loop}
-    \end{codeblock*}
-  \end{frame}
-  \frame{
-    \frametitle{Who tells $c_2$?}
-    The same messages that keep caches coherent:
-    \begin{itemize}
-      \item<2 -> someone else touches a line my transaction is using?
-                 That is a \blueite{conflict}, and one of us aborts
-      \item<3 -> no log to scan at commit time; the protocol validated
-                 as it went
-      \item<4 -> the paper adds a small transactional cache and a few new
-                 states to the protocol; the rest was already there
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{Short and sweet}
-    The design leans on two assumptions:
-    \begin{enumerate}
-      \item<2 -> transactions are \blueite{short}: shorter than a scheduling
-                 quantum
-      \item<3 -> transactions are \blueite{small}: they fit in the
-                 transactional cache
-    \end{enumerate}
   }
   \frame{
     \frametitle{Relate back to data structures}
