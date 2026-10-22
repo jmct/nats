@@ -1,0 +1,24 @@
+% An atomic block, bracketed, with a caption.
+% Needs in the preamble:  \usepackage{tikz}
+% Use with:               \input{figs/atomic-dream.tikz}
+\begin{tikzpicture}[
+  line width=0.8pt,
+  code/.style={font=\ttfamily, text=dark-gray, anchor=west, inner sep=1pt},
+  stub/.style={dark-gray, line width=0.6pt},
+  bracket/.style={dark-lucid-blue, line width=1pt, line cap=round, line join=round},
+  caption/.style={my-magenta, font=\large, align=left, inner sep=1pt},
+]
+  %% ---- the block ---------------------------------------------------------
+  \node[code] at (-4.2,  1.8) {atomic \char`\{};
+  \foreach \y in {1.1, 0.5, -0.1, -0.7}
+    \draw[stub] (-3.5, \y) -- ++(1.6, 0) node[code, inner sep=0, xshift=1pt] {;};
+  \node[code] at (-4.2, -1.4) {\char`\}};
+
+  %% ---- the bracket -------------------------------------------------------
+  \draw[bracket] (-1.2, 2.1) -- (-0.9, 2.1) -- (-0.9, -1.7) -- (-1.2, -1.7);
+  \draw[bracket] (-0.9, 0.2) -- (-0.5, 0.2);
+
+  %% ---- the caption -------------------------------------------------------
+  \node[caption, rotate=8, anchor=west] at (-0.3, 0.1)
+    {Define our \emph{own}\\indivisible units of\\work!};
+\end{tikzpicture}

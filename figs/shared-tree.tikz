@@ -24,11 +24,11 @@
   % \fun{x}{name}{prefix}: a function whose body is two placeholder lines.
   % Defines coordinates <prefix>s / <prefix>e at the ends of the second line.
   \newcommand{\fun}[3]{%
-    \node[code] at (#1, 3.0) {#2(\dots)\,\{};
+    \node[code] at (#1, 3.0) {#2(\dots)\,\char`\{};
     \draw[stub] (#1+0.5, 2.35) -- ++(1.2,0) node[code, inner sep=0, xshift=1pt] {;};
     \draw[stub] (#1+0.5, 1.8) coordinate (#3s) -- ++(1.2,0)
                 node[code, inner sep=0, xshift=1pt] (#3e) {;};
-    \node[code] at (#1, 1.25) {\}};
+    \node[code] at (#1, 1.25) {\char`\}};
   }
   % \pair{name}{x}{y}: a two-cell node; cells are <name>l and <name>r.
   \newcommand{\pair}[3]{%
