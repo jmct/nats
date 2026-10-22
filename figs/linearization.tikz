@@ -1,0 +1,43 @@
+% Six atomic blocks laid out in one linear order.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \input{figs/linearization.tikz}
+% Use in a frame with:    \linearization           (the stack alone)
+%                         \linearization[aside]    (plus "But..." and the callout)
+% The bounding box is the same either way, so the stack stays put across overlays.
+\newif\iflinearizationaside
+\pgfkeys{/linearization/.is family, /linearization,
+  aside/.is if=linearizationaside,
+}
+\newcommand{\linearization}[1][]{%
+\linearizationasidefalse
+\pgfkeys{/linearization, #1}%
+\begin{tikzpicture}[
+  line width=0.8pt,
+  % the three tints, at the opacities used for the atomic blocks
+  tintA/.style={fill=lucid-blue,    fill opacity=0.28},
+  tintB/.style={fill=galois-yellow, fill opacity=0.45},
+  tintC/.style={fill=my-magenta,    fill opacity=0.28},
+  cell/.style={draw=none, rectangle, minimum width=2.4cm, minimum height=0.72cm,
+               inner sep=0pt, outer sep=0pt, text=dark-gray, text opacity=1},
+  but/.style={my-magenta, font=\Large, inner sep=1pt},
+  callout/.style={my-magenta, font=\large, align=left, inner sep=2pt},
+  frame/.style={dark-gray, line width=0.6pt, line cap=round},
+]
+  \useasboundingbox (-5.0, -2.7) rectangle (5.4, 2.7);
+%
+  %% ---- the linear order --------------------------------------------------
+  % colours deliberately do not cycle: B and A each appear twice in a row
+  \foreach [count=\i] \t in {A, B, B, C, A, A}
+    \node[cell, tint\t] at (-3.5, {2.64 - 0.78*\i}) {$c_\i$};
+%
+  %% ---- the aside ---------------------------------------------------------
+  \iflinearizationaside
+    \node[but, rotate=3] at (0.1, 0.1) {But\,\dots};
+    \draw[frame] (1.6, 1.55) -- (5.2, 1.55)
+                 (1.6, 1.55) -- (1.6, -1.35)
+                 (1.6, -1.35) -- (5.2, -1.35);
+    \node[callout, rotate=-2, anchor=west] at (1.9, 0.1)
+      {How does $c_2$ know\\it's not gonna\\conflict?};
+  \fi
+\end{tikzpicture}%
+}
