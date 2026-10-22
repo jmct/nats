@@ -1,0 +1,65 @@
+% Two functions whose atomic blocks both touch the same shared structure.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \usetikzlibrary{arrows.meta}
+% Use with:               \input{figs/atomic-blocks.tikz}
+\begin{tikzpicture}[
+  line width=0.8pt,
+  code/.style={font=\ttfamily\small, text=dark-gray, anchor=west, inner sep=1pt},
+  stub/.style={dark-gray, line width=0.6pt},
+  % translucent highlight behind each atomic block; text keeps the code colour
+  shade/.style={draw=none, rounded corners=2pt, fill opacity=0.28},
+  shadeA/.style={shade, fill=lucid-blue},
+  shadeB/.style={shade, fill=galois-yellow, fill opacity=0.45},
+  pair/.style={draw=dark-lucid-blue, rectangle, minimum width=1.1cm,
+               minimum height=0.6cm, inner sep=0pt, outer sep=0pt},
+  ref/.style={dark-gray, -{Stealth[length=6pt]}, line width=0.9pt},
+  % the rest of the tree, trailing off
+  tail/.style={dark-lucid-blue!45, line width=0.8pt},
+]
+  %% ---- helpers -----------------------------------------------------------
+  % \stub{x}{indent}{y}: a placeholder statement
+  \newcommand{\stub}[3]{%
+    \draw[stub] (#1+#2, #3) -- ++(0.9,0) node[code, inner sep=0, xshift=1pt] {;};}
+  % \kw{x}{indent}{y}{text}: a line of code
+  \newcommand{\kw}[4]{\node[code] at (#1+#2, #3) {#4};}
+
+  %% ---- f1 ----------------------------------------------------------------
+  \def\fx{-5.2}
+  \fill[shadeA] (\fx+0.35, 2.68) rectangle (\fx+2.35, 0.42);
+  \kw  {\fx}{0.0}{ 3.80}{f1(\dots)\,\{}
+  \stub{\fx}{0.5}{ 3.35}
+  \stub{\fx}{0.5}{ 2.90}
+  \kw  {\fx}{0.5}{ 2.45}{atomic \{}
+  \stub{\fx}{1.0}{ 2.00}
+  \stub{\fx}{1.0}{ 1.55}
+  \stub{\fx}{1.0}{ 1.10}
+  \kw  {\fx}{0.5}{ 0.65}{\}}
+  \stub{\fx}{0.5}{ 0.20}
+  \kw  {\fx}{0.0}{-0.25}{\}}
+
+  %% ---- f2 ----------------------------------------------------------------
+  \def\gx{1.9}
+  \fill[shadeB] (\gx+0.35, 3.13) rectangle (\gx+2.35, 0.87);
+  \kw  {\gx}{0.0}{ 3.80}{f2(\dots)\,\{}
+  \stub{\gx}{0.5}{ 3.35}
+  \kw  {\gx}{0.5}{ 2.90}{atomic \{}
+  \stub{\gx}{1.0}{ 2.45}
+  \stub{\gx}{1.0}{ 2.00}
+  \stub{\gx}{1.0}{ 1.55}
+  \kw  {\gx}{0.5}{ 1.10}{\}}
+  \stub{\gx}{0.5}{ 0.65}
+  \kw  {\gx}{0.0}{ 0.20}{\}}
+
+  %% ---- the shared structure ---------------------------------------------
+  \node[pair] (root) at (-0.65, -1.9) {};
+  \draw[dark-lucid-blue] (root.north) -- (root.south);
+  \coordinate (rootl) at ([xshift=-0.275cm]root.center);
+  \coordinate (rootr) at ([xshift= 0.275cm]root.center);
+  \fill[dark-lucid-blue] (rootl) circle (1.7pt) (rootr) circle (1.7pt);
+  \draw[tail] (rootl) to[out=-90, in=60]  (-1.9, -2.9);
+  \draw[tail] (rootr) to[out=-90, in=120] ( 0.6, -2.9);
+
+  %% ---- the atomic blocks reach the shared structure ---------------------
+  \draw[ref] (\fx+2.45, 1.55) to[out=0,   in=110] (root.north west);
+  \draw[ref] (\gx+0.25, 2.00) to[out=180, in=70]  (root.north east);
+\end{tikzpicture}
