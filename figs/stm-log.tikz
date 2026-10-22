@@ -25,6 +25,8 @@
                 inner xsep=8pt, inner ysep=5pt, minimum width=1.6cm},
   span/.style={lucid-blue, dashed, line width=0.7pt},
   arrow/.style={dark-gray, -{Stealth[length=6pt]}, line width=0.9pt},
+  % a log that failed validation
+  invalid/.style={my-magenta, line width=1.1pt, line cap=round, draw opacity=0.5},
   time/.style={dark-gray, -{Stealth[length=7pt]}, line width=0.9pt},
 ]
   % reveal=<n>: appear from overlay n on, unless the picture is static
@@ -61,7 +63,8 @@
   \node[state, reveal=4] (s2) at (0, -1.5) {x = 42\\$\vdots$};
 %
   %% ---- f2 fails validation and tries again --------------------------------
-  \draw[arrow, reveal=5] (f2a.south) -- ++(0, -0.6);
+  \draw[invalid, reveal=5] (f2a.north west) -- (f2a.south east)
+                           (f2a.south west) -- (f2a.north east);
   \node[label, reveal=5, anchor=north] at (3.3, -0.35) {try again};
   \node[label, reveal=5] (l3) at (3.3, -1.15) {$f_2$ log};
   \node[log, reveal=5, below=2pt of l3] (f2b) {read x@42\\\quad$\vdots$};
