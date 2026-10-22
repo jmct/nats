@@ -1,0 +1,51 @@
+% Don't actually do anything: a function body and the transaction log it produces.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \input{figs/tikz-overlays.tex}
+%                         \input{figs/tx-log.tikz}
+% Use in a frame with:    \txlog            builds over four overlays
+%                         \txlog[static]    everything at once
+\newif\iftxlogstatic
+\pgfkeys{/txlog/.is family, /txlog,
+  static/.is if=txlogstatic,
+}
+\newcommand{\txlog}[1][]{%
+\txlogstaticfalse
+\pgfkeys{/txlog, #1}%
+\begin{tikzpicture}[
+  line width=0.8pt,
+  heading/.style={my-magenta, font=\Large, align=center, inner sep=2pt},
+  label/.style={my-magenta, inner sep=2pt},
+  code/.style={font=\ttfamily, text=dark-gray, anchor=west, inner sep=1pt},
+  ledger/.style={dark-gray, line width=0.6pt, line cap=round},
+]
+  % reveal=<n>: appear from overlay n on, unless the picture is static
+  \iftxlogstatic
+    \tikzset{reveal/.style={}}
+  \else
+    \tikzset{reveal/.style={visible on=<##1->}}
+  \fi
+  \useasboundingbox (-5.4, -2.2) rectangle (5.4, 3.4);
+%
+  %% ---- heading -------------------------------------------------------------
+  \node[heading, reveal=1] at (0, 2.6)
+    {Don't \emph{actually} do anything.\\[3pt]Keep everything in a transaction log.};
+%
+  %% ---- f1 -------------------------------------------------------------------
+  \def\fx{-5.2}
+  \node[code, reveal=2] at (\fx+0.0,  1.1) {f1(\dots)\,\char`\{};
+  \node[code, reveal=2] at (\fx+0.5,  0.6) {y = read(x);};
+  \node[code, reveal=2] at (\fx+0.5,  0.1) {if (y > 42) \char`\{};
+  \node[code, reveal=2] at (\fx+1.0, -0.4) {write(x, 42);};
+  \node[code, reveal=2] at (\fx+0.5, -0.9) {\char`\}};
+  \node[code, reveal=2] at (\fx+0.0, -1.4) {\char`\}};
+%
+  %% ---- the log it produces --------------------------------------------------
+  \def\lx{1.2}
+  \node[label, reveal=3, anchor=south west] at (\lx, 1.05) {$f_1$ log};
+  % an open-ended ledger: top and left edges only
+  \draw[ledger, reveal=3] (\lx+3.6, 1.0) -- (\lx, 1.0) -- (\lx, -2.0);
+  \node[code, reveal=3] at (\lx+0.3,  0.55) {read\ \ x@val};
+  \node[code, reveal=4] at (\lx+0.3,  0.05) {write x@42};
+  \node[code, reveal=4] at (\lx+0.3, -0.55) {$\vdots$};
+\end{tikzpicture}%
+}
