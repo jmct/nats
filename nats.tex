@@ -2,910 +2,437 @@
 \usetheme{jmct}
 
 \usepackage{amssymb}
-\usepackage{stmaryrd}
-\usepackage{calc}
+\usetikzlibrary{arrows.meta,shapes.geometric,shapes.symbols,positioning}
 
-\newcommand{\Nat}{\mathbb{N}}
+% Diagrams that define a macro are loaded once, here; the rest are
+% \input directly on their frame.
+\input{figs/tikz-overlays.tex}
+\input{figs/contention.tikz}
+\input{figs/linearization.tikz}
+\input{figs/stm-log.tikz}
+\input{figs/tx-log.tikz}
 
-\title{What About the Natural Numbers?}%\texorpdfstring{$\mathbb{N}$}}
+\title{STM, Haskell, and Engineering Tradeoffs}
 \subtitle{JMCT}
 \date{}
 
-% \textover[align]{text}{width-text}: print `text' in the width that
-% `width-text' would take, so a swapped-in word doesn't reflow the line.
-\newcommand{\textover}[3][l]{%
- \makebox[\widthof{#3}][#1]{#2}%
-}
+% \diagram[scale]{file}: a centred TikZ figure
+\newcommand{\diagram}[2][1]{%
+  \begin{center}\scalebox{#1}{\input{#2}}\end{center}}
+
+% \signpost{n}: the outline with item n highlighted
+\newcommand{\spitem}[2]{\ifnum\signpostcurrent=#1 \blueit{#2}\else#2\fi}
+\newcommand{\signpost}[1]{%
+  \frametitle{Sign post}
+  \def\signpostcurrent{#1}%
+  \begin{enumerate}
+    \item \spitem{1}{Sharing is caring}
+    \item \spitem{2}{Locks, and why we're tired of them}
+    \item \spitem{3}{The dream: \texttt{atomic \{ \}}}
+    \item \spitem{4}{How does $c_2$ know?}
+    \item \spitem{5}{Thirty years later}
+    \item \spitem{6}{Conclude}
+  \end{enumerate}}
 
 \begin{document}
-	\frame {
-		\titlepage
-	}
+  \frame{
+    \titlepage
+  }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Intro
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  \frame {
-    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$\phantom{?}}
-  }
-  \frame {
-    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$?}
-  }
-
-
-  \frame {
-    \myquote{Some thirty years into the history of
-      machine-independent programming language design, the treatment of numbers
-      is still problematic.}{Colin Runciman}{1989}
-  }
-  \frame {
-    \myquote{Some \textover[c]{\blueit{sixty}}{thirty} years into the history of
-      machine-independent programming language design, the treatment of numbers
-      is still problematic.}{Me}{just now}
+  \frame{
+    \frametitle{Main takeaway if you're STM Brained:}
+    Locks are cope
   }
   \frame{
-    \frametitle{Main takeaway}
-    The number system we use should relate to the structures of the problem
-    we're solving.
-  }
-  \frame{
-    \frametitle{Main takeaway}
-    For some domains, the use of Reals\footnote{or their approximation via
-    \texttt{Float}s} may be appropriate:
+    \frametitle{More realistically}
+    Lock synchronization expresses a useful thing:
     \begin{itemize}
-      \item<2 -> e.g. physics calculations involving volume, speed, or mass
+      \item<2 -> who holds which key, in what order, for how long
     \end{itemize}
   }
   \frame{
-    \frametitle{Main takeaway}
-    For \emph{many} problems \blueit{Integers} are appropriate:
-    \begin{itemize}
-      \item<2 -> Fixed-precision DSP
-      \item<3 -> Bank account balance :'(
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{Main takeaway}
-    Runciman's argument:\newline
-    \hangindent=0.7cm
-    For many of the discrete structures involved in the
-    day-to-day practice of programming, the \blueit{natural} numbers are
-    the most appropriate number system.
-  }
-  \frame{
-    \frametitle{How?}
-    In the process of exploring the Natural Numbers, we'll be developing an API.
-    As we progress we'll see how different representations affect our API.
+    \frametitle{More realistically}
+    What we actually want to say is \blueite{which} steps have to happen as a unit.
   }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%% Outline
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Sharing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-      %* Overview of the $\mathbb{N}$s themselves
-      %* Programming with \texttt{Nat}
-      %* Arithmetic with \texttt{Nat} and properties we care about
-      %* How does \texttt{Nat} influence API design?
-      %* Implementation Concerns
-      %* Beyond \texttt{Nat}
-      %* Conclude
+  \frame{\signpost{1}}
 
-  %%%%%%%
-  % Goals
-  %
   \frame{
-    \frametitle{\#goals}
+    \frametitle{Sharing is caring}
+    Two functions. One tree.
+    \diagram[0.8]{figs/shared-tree.tikz}
+  }
+  \frame{
+    \frametitle{Sharing is caring}
+    Now run them at the same time.
+  }
+  \frame{
+    \frametitle{What could go wrong?}
     \begin{enumerate}
-      \item<2 -> Show you that the [lazy?] $\mathbb{N}$s are \blueite{Good}
-                 and \blueite{Proper}
-      \item<3 -> Demonstrate that even \emph{simple} choices of types
-                 for an API have deep consequences
-      \item<4 -> Have you asking ``What about the Natural Numbers?''
-                 next time you create an API.
-    \end{enumerate}
-  }
-  %%%%%%%
-  % Actual Outline
-  %
-  \frame{
-    \frametitle{Shape of things to come}
-    \begin{enumerate}
-      \item<2 -> Overview of the $\mathbb{N}$s themselves
-      \item<3 -> Programming with \texttt{Nat}
-      \item<4 -> Arithmetic with \texttt{Nat} and properties we care about
-      \item<5 -> How does \texttt{Nat} influence API design?
-      \item<6 -> Implementation concerns
-      \item<7 -> Beyond \texttt{Nat}
-      \item<8 -> Conclude
-    \end{enumerate}
-  }
-
-  %%%%%%%
-  % What are they?
-  %
-  % We actually see them here! We just counted things, _that's_
-  % the natural number.
-  \frame{
-    \frametitle{Let's start}
-    \begin{enumerate}
-      \item \blueit{Overview of the $\mathbb{N}$s themselves}
-      \item Programming with \texttt{Nat}
-      \item Arithmetic with \texttt{Nat} and properties we care about
-      \item How does \texttt{Nat} influence API design?
-      \item Implementation concerns
-      \item Beyond \texttt{Nat}
-      \item Conclude
-    \end{enumerate}
-  }
-
-  \frame{
-    \frametitle{What \emph{are} they?}
-    The \emph{Natural} numbers have a few definitions:
-    \begin{enumerate}
-      \item<2-> Set Theoretic
-      \item<3> Peano Axioms
-    \end{enumerate}
-  }
-
-  %%%%%%%
-  % Set Theoretic
-  %
-  \frame{
-    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
-  }
-  \frame{
-    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
-
-    Several possible Set-theoretic definitions, von Neumann proposed the
-    following:
-    \begin{itemize}
-      \item<2 -> $0 = \{\}$
-      \item<3 -> $1 = 0 \cup \{0\}$
-      \item<4  > $2 = 1 \cup \{1\}$
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
-
-    Several possible Set-theoretic definitions, von Neumann proposed the
-    following:
-    \begin{itemize}
-      \item<1 -> $0 = \{\}$
-      \item<1 -> $1 = 0 \cup \{0\} = \{0\} = \{\{\}\}$
-      \item<1  > $2 = 1 \cup \{1\} = \{0,1\} = \{\{\},\{\{\}\}\}$
-    \end{itemize}
-  }
-
-  %%%%%%%
-  % Peano Axioms
-  %
-  % That's pretty complicated
-  %
-  % Turns our that there is a simpler way
-  \frame{
-    \frametitle{\textbf{\underline{Set}}ting Yourself Up For Success}
-
-    \centering {\huge oof}
-
-  }
-  \frame{
-    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-
-    In 1889 Giuseppe Peano published\par
-    \vspace{0.5cm}
-
-    ``The principles of arithmetic presented by a new method''
-
-  }
-  \frame{
-    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-
-    The two axioms we care about most (right now) are simple enough:
-    \begin{itemize}
-      \item <2 -> $0 \in \mathbb{N}$
-      \item <3 -> $\forall n \in \Nat\ldotp S(n) \in \Nat$
-    \end{itemize}
-
-  }
-
-  %%%%%%%
-  % Data!
-  %
-  \frame{
-    \frametitle{Sign post}
-    \begin{enumerate}
-      \item Overview of the $\mathbb{N}$s themselves
-      \item \blueit{Programming with \texttt{Nat}}
-      \item Arithmetic with \texttt{Nat} and properties we care about
-      \item How does \texttt{Nat} influence API design?
-      \item Implementation concerns
-      \item Beyond \texttt{Nat}
-      \item Conclude
-    \end{enumerate}
-  }
-
-  \frame{
-    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-
-    Okay, but we're concerned with the \emph{practice} of \emph{programming} \dots
-  }
-  \begin{frame}[fragile]
-    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-    \begin{codeblock}
- type Nat where
-   Z    : Nat
-   Succ : Nat -> Nat
-    \end{codeblock}
-  \end{frame}
-  \frame{
-    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-    Now we can easily represent any $\Nat$ we want!
-    {\color{dark-gray}
-    \uncover<2->{
-      \begin{align*}
-      \llbracket \code{Z} \rrbracket &= \blueit{0}\\
-      \llbracket \code{Succ n} \rrbracket &= \blueit{1~+~} \llbracket \code{n} \rrbracket
-      \end{align*}
-    }}
-  }
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%% Construction
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-  \frame{
-    \frametitle{Talk over?}
-  }
-  \frame{
-    \frametitle{Talk over?}
-    This is all very nice and elegant, but the ergonomics \emph{suck}
-  }
-
-  \begin{frame}
-    \frametitle{RSI risk}
-    Even just typing this slide made my RSI flare up:
-    \begin{itemize}
-      \item $\blueit{3}  \Rightarrow $ \code{Succ (Succ (Succ Z))}
-      \item $\blueit{11} \Rightarrow $ \code{Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ Z))))))))))}
-    \end{itemize}
-  \end{frame}
-
-  %%%%%%%
-  % Our friend, the list!
-  %
-  \frame{
-    \frametitle{Spoonful of sugar}
-    What do we do for other types?
-  }
-  \begin{frame}[fragile]
-    \frametitle{Spoonful of sugar}
-    \begin{codeblock}
- type List elem where
-   []   : List elem
-   (::) : elem -> List elem -> List elem
-    \end{codeblock}
-  \end{frame}
-  \begin{frame}
-    \frametitle{Spoonful of sugar}
-    Lists are flexible and easy to reason about, but they have the same problem!
-    \begin{itemize}
-      \item<2 -> \code{type String = List Char}
-      \item<3  > \code{initials = 'P' :: ('W' :: ('L' :: []))}
-    \end{itemize}
-  \end{frame}
-  \begin{frame}
-    \frametitle{Spoonful of sugar}
-    Because of this ubiquity of lists, compiler writers quickly came up with syntactic sugar for them:
-    \begin{itemize}
-      \item<2 -> \code{"PWL"} $\Rightarrow$ \code{'P' :: ('W' :: ('L' :: []))}
-      \item<3  > \code{[1..3]} $\Rightarrow$ \code{1 :: (2 :: (3 :: []))}
-    \end{itemize}
-  \end{frame}
-  \begin{frame}
-    \frametitle{Spoonful of sugar}
-    Similarly, we can implement syntactic sugar for the natural numbers:
-    \begin{itemize}
-      \item<2 -> \code{3} $\Rightarrow$ \code{Succ (Succ (Succ Z))}
-    \end{itemize}
-  \end{frame}
-  %%%%%%%
-  % We still maintain our reasoning power
-  %
-  \frame{
-    \frametitle{Spoonful of sugar}
-    We lose nothing with the syntactic sugar, we can still pattern match on naturals and
-    retain all of our inductive reasoning.
-  }
-  \begin{frame}[fragile]
-    \frametitle{Natural usage}
-    \begin{codeblock}
-    ... if length xs <= 5
-        then ...
-        else ...
-    \end{codeblock}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Pattern Matching still available...}
-    \begin{codeblock}
-(<=) : Nat -> Nat -> Bool
-Z               _ = True
-(Succ _)        Z = False
-(Succ x) (Succ y) = x <= y
-    \end{codeblock}
-  \end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%% Arithmetic
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-  \frame{
-    \frametitle{Sign post}
-    \begin{enumerate}
-      \item Overview of the $\mathbb{N}$s themselves
-      \item Programming with \texttt{Nat}
-      \item \blueit{Arithmetic with \texttt{Nat} and properties we care about}
-      \item How does \texttt{Nat} influence API design?
-      \item Implementation concerns
-      \item Beyond \texttt{Nat}
-      \item Conclude
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Reading, Writing and ...}
-    \begin{enumerate}
-      \item<2 -> Programmers expect some arithmetic `out of the box'
-                  when dealing with numbers.
-      \item<3 -> At the very least they expect \blueit{$+$}, \blueit{$-$}, \blueit{$\times$}, \blueit{$\div$}
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Real data structures}
-    When programming with the discrete structures which are common in programming,
-    there is a correspondence between the operations on numbers and the operations
-    on the data structures.
-    \begin{enumerate}
-      \item<2 -> Think `array indices', or `size'
-      \item<3 -> What would a \blueite{negative} size mean?
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Who would even do that?}
-  }
-  \frame{
-    \frametitle{Who would even do that?}
-    \begin{figure}
-      \centering
-      \includegraphics[width=0.5\textwidth]{figs/length.png}
-      \caption{lol}
-    \end{figure}
-  }
-  \frame{
-    \frametitle{Exceptional negatives}
-    Think of how many APIs return an ``\blueit{\texttt{Int}}''.
-    \begin{enumerate}
-      \item <2> How many of these APIs only use the negative numbers to signal errors?
+      \item<2 -> \texttt{f1} reads a node while \texttt{f2} is halfway
+                 through rewriting it
+      \item<3 -> Both insert into the same empty slot; one insert quietly
+                 vanishes
+      \item<4 -> Nothing, for months. Then it's a Friday.
     \end{enumerate}
   }
   \frame{
     \frametitle{What do we want?}
-    If we think a bit about arithmetic we may conclude the following:
-    \begin{enumerate}
-      \item<2 -> Ideally, our operators would be \blueite{total}
-      \item<3 -> When possible, we want our operators to be \blueite{closed}
-    \end{enumerate}
+    Every operation wants the same promise:
+    \begin{itemize}
+      \item<2 -> \blueite{While I'm in here, nobody else is.}
+    \end{itemize}
   }
-  \begin{frame}
-    \frametitle{Why?}
-    These properties, when combined, allow us to be confident that when we
-    operate on two \code{Nat}s, we get another \code{Nat}.
-    \begin{enumerate}
-      \item<2 -> This isn't true for arithmetic over all number systems (nor should it be!)
-      \item<3 -> Many languages fail even where it should be!
-    \end{enumerate}
+  \frame{
+    \frametitle{What do we want?}
+    The question is \emph{who} makes that promise, and what does it cost to enforce it.
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Locks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \frame{\signpost{2}}
+
+  \frame{
+    \frametitle{Mutual exclusion}
+    One key. Whoever holds it gets the resource; everyone else waits.
+    \diagram[0.9]{figs/mutex.tikz}
+  }
+  \frame{
+    \frametitle{Mutual exclusion}
+    This works! It's simple, it's general, and your debugger understands it.
+  }
+  \frame{
+    \frametitle{Mutual exclusion}
+    Importantly, this enforces \blueite{serialization}.
+    \diagram[0.9]{figs/mutex.tikz}
+  }
+  \begin{frame}[fragile]
+    \frametitle{Atomic Operations}
+    \begin{itemize}
+      \item Hardware-supported \emph{indivisible} operations on memory
+    \end{itemize}
+    \vspace{1em}
+    \begin{codeblock}[fontsize=\footnotesize]
+void atomic_max(atomic_int *target, int val) {
+
+  int current = atomic_load(target);
+  while (value > current) {
+    if (atomic_compare_exchange_weak(target, &current, value)) {
+      break;
+    }
+  }
+}
+    \end{codeblock}
   \end{frame}
+
   \frame{
-    \frametitle{Totality}
-    Our functions being \blueite{total} gives us confidence that for any input, we
-    get a result.
+    \frametitle{Atomic Truth Bombs}
+    \begin{itemize}
+      \item<2 -> This is awesome!
+      \item<3 -> Only works on small amounts of memory (often small-N\# of machine words)
+      \item<4 -> Reality: Data-structure often large-N\# of machine words
+      \item<5 -> Therefore, getting lock-free data structures right is very hard!
+    \end{itemize}
   }
   \frame{
-    \frametitle{Closure}
-    Our functions being \blueite{closed} means that the result values lie within the
-    same number system as their arguments.
+    \frametitle{Coarse}
+    One lock for the whole tree
+    \begin{center}\scalebox{0.8}{\contentiontree}\end{center}
+  }
+  \frame{
+    \frametitle{Coarse}
+    Correct, and easy.
+    \begin{itemize}
+      \item<2 -> Also: every operation now waits for every other, even the
+                 ones touching opposite ends of the tree
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Fine}
+    A lock per node
+    \begin{center}\scalebox{0.8}{\contentiontree[all locks]}\end{center}
+  }
+  \frame{
+    \frametitle{Fine}
+    Now we get parallelism!
+    \begin{itemize}
+      \item<2 -> \dots and a locking \blueite{order} to remember
+      \item<3 -> \dots and hand-over-hand acquisition on the way down
+      \item<4 -> \dots and a plan for when \texttt{f1} holds the left child,
+                 wants the right, and \texttt{f2} is doing the opposite
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{The usual suspects}
+    \begin{enumerate}
+      \item<2 -> \blueite{Deadlock}: two of us, each waiting on the other
+      \item<3 -> \blueite{Convoying}: the holder gets descheduled, and the
+                 whole queue idles until it's back
+      \item<4 -> \blueite{Priority inversion}: a low-priority holder keeps a
+                 high-priority waiter waiting
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Lock-free}
+    The hardware offers an escape hatch: single instructions that read,
+    check, and write \blueite{indivisibly}.
+    \begin{itemize}
+      \item<2 -> compare-and-swap, load-linked/store-conditional, \dots
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Lock-free}
+    A preempted thread can't block anyone, and there's no lock to deadlock on.
+    \begin{itemize}
+      \item<2 -> but it's \blueite{one word} at a time
+      \item<3 -> and every data structure becomes a research paper
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Pick your poison}
+    \diagram[0.85]{figs/considerations.tikz}
   }
   \frame{
     \frametitle{What do we want? (part 2)}
-    \myquote{The aim is a total closed system of arithmetic with results that
-             can be safely interpreted in the context of the discrete
-             structures in general programming}{Colin Runciman}{1989}
+    \begin{enumerate}
+      \item<2 -> the \blueite{generality} of locks: any structure, any
+                 number of words
+      \item<3 -> the \blueite{progress} of lock-free: no deadlocks, no convoys
+      \item<4 -> the \blueite{mental model} of neither: just say what must
+                 be atomic
+    \end{enumerate}
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% The dream
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \frame{\signpost{3}}
+
+  \frame{
+    \frametitle{The dream}
+    \diagram[0.9]{figs/atomic-dream.tikz}
   }
   \frame{
-    \frametitle{Back to arithmetic}
-    Addition and Multiplication present no difficulties.
+    \frametitle{The dream}
+    No keys, no order, no hand-over-hand. Just a bracket around the steps
+    that belong together.
   }
   \frame{
-    \frametitle{Back to arithmetic}
-    What about Subtraction?
+    \frametitle{Two blocks, one structure}
+    \diagram[0.8]{figs/atomic-blocks.tikz}
+  }
+  \frame{
+    \frametitle{The promise}
+    Each atomic block appears to run
+    \begin{enumerate}
+      \item<2 -> \blueite{all at once}
+      \item<3 -> at \blueite{some instant} between its first step and its last
+      \item<4 -> with nothing from any other block in between
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Linearizability}
+    So however the blocks actually overlapped, there is a single
+    \blueite{sequential} history that explains what everyone saw.
+    \begin{itemize}
+      \item<2 -> Herlihy \& Wing gave this a name in 1990
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Lining up}
+    \begin{center}\linearization[aside]\end{center}
+  }
+  \frame{
+    \frametitle{The catch}
+    A block runs \blueite{as if} it were alone\dots
+    \begin{itemize}
+      \item<2 -> \dots and only finds out at the end whether it actually was
+    \end{itemize}
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% How
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \frame{\signpost{4}}
+
+  \frame{
+    \frametitle{Step one}
+    \begin{center}\txlog\end{center}
+  }
+  \frame{
+    \frametitle{Step two}
+    At the end of the block, check the log against the world:
+    \begin{enumerate}
+      \item<2 -> everything I read is still what I read? \blueite{Commit}:
+                 write the log out, all at once
+      \item<3 -> something changed under me? \blueite{Throw the log away}
+                 and run the block again
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Validate, then commit}
+    \begin{center}\scalebox{0.9}{\stmlog}\end{center}
+  }
+  \frame{
+    \frametitle{Optimism}
+    Locks are pessimistic: pay up front, every time.
+    \begin{itemize}
+      \item<2 -> Transactions are optimistic: pay only on a conflict, and
+                 then by \blueite{retrying}
+      \item<3 -> This is \blueite{software} transactional memory, and you can
+                 build it in a library
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{The hardware is already keeping a log}
+    Every core has a cache, and the coherence protocol already tracks
+    which core has which line, and whether it has written to it.
+    \begin{itemize}
+      \item<2 -> That \emph{is} a read set and a write set
+      \item<3 -> Herlihy \& Moss: so let the cache be the log
+    \end{itemize}
   }
   \begin{frame}[fragile]
-    \frametitle{Don't wait, saturate}
+    \frametitle{Herlihy \& Moss, 1993}
+    Six new instructions:
+    \begin{codeblock}
+LT        load-transactional
+LTX       load-transactional-exclusive
+ST        store-transactional
+COMMIT    make the tentative writes real
+ABORT     throw them away
+VALIDATE  will I still be able to commit?
+    \end{codeblock}
+  \end{frame}
+  \frame{
+    \frametitle{Tentative}
+    Transactional loads and stores are \blueite{tentative}:
+    \begin{itemize}
+      \item<2 -> the values live in a small \blueite{transactional cache}
+      \item<3 -> nobody else can see them until \code{COMMIT}
+      \item<4 -> \code{ABORT} just empties that cache
+    \end{itemize}
+  }
+  \begin{frame}[fragile]
+    \frametitle{A counter, transactionally}
     \begin{codeblock*}
-\uncover<2->{(.-.) : Nat -> Nat -> Nat}
-\uncover<2->{n        .-.        Z = n}
-\uncover<2->{Z        .-.        _ = Z}
-\uncover<2->{(Succ n) .-. (Succ m) = n .-. m}
+loop:
+\uncover<2->{  old = LTX(&counter)}
+\uncover<3->{  ST(&counter, old + 1)}
+\uncover<4->{  if COMMIT() then return}
+\uncover<5->{  goto loop}
     \end{codeblock*}
   \end{frame}
+  \frame{
+    \frametitle{Who tells $c_2$?}
+    The same messages that keep caches coherent:
+    \begin{itemize}
+      \item<2 -> someone else touches a line my transaction is using?
+                 That is a \blueite{conflict}, and one of us aborts
+      \item<3 -> no log to scan at commit time; the protocol validated
+                 as it went
+      \item<4 -> the paper adds a small transactional cache and a few new
+                 states to the protocol; the rest was already there
+    \end{itemize}
+  }
+  \frame{
+    \frametitle{Short and sweet}
+    The design leans on two assumptions:
+    \begin{enumerate}
+      \item<2 -> transactions are \blueite{short}: shorter than a scheduling
+                 quantum
+      \item<3 -> transactions are \blueite{small}: they fit in the
+                 transactional cache
+    \end{enumerate}
+  }
   \frame{
     \frametitle{Relate back to data structures}
-  }
-  \begin{frame}[fragile]
-    \frametitle{Relate back to data structures}
-    \begin{codeblock}
-drop : Nat -> List a -> List a
-drop Z        xs      = xs
-drop _        []      = []
-drop (Succ n) (x::xs) = drop n xs
-    \end{codeblock}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Relate back to data structures}
-    We \emph{want} a correspondence between operations on data structures and
-    on numbers:
-    \begin{codeblock}
-length (drop n xs) === length xs .-. n
-    \end{codeblock}
-  \end{frame}
-  \frame{
-    \frametitle{Relate back to data structures}
-    These sorts of correspondences are what we use (often in our head) when
-    programming or refactoring.
-  }
-  \frame{
-    \frametitle{A divisive issue}
-    Unlike Subtraction, division is \emph{already} closed over Natural Numbers
-  }
-  \frame{
-    \frametitle{A divisive issue}
-    Unlike Subtraction, division is \emph{already} closed over Natural Numbers
-    (for the cases for which it is defined!)
-  }
-  \frame{
-    \frametitle{Back to square zero}
-    Some mathematicians define the Natural Numbers as starting from One! Would
-    that save us from this issue?
-  }
-  \frame{
-    \frametitle{Back to square zero}
-    Maybe, but then we'd lose the important correspondence with real data
-    structures.
-  }
-  \frame{
-    \frametitle{Quick digression}
-  }
-  \frame{
-    \frametitle{Quick digression}
-    Zero is not nothing!
-  }
-  \frame{
-    \frametitle{Two solutions}
-    Runciman proposes two solutions to the `division by zero' problem:
-    \begin{enumerate}
-      \item<2 -> based on viewing division on $\mathbb{N}$s as `slicing'
-      \item<3 -> based on using lazy \texttt{Nat}s
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Division as slicing}
-    Think of dividing \texttt{x} by \texttt{y} as cutting \texttt{x} in
-    \texttt{y} places.
-  }
-  \begin{frame}[fragile]
-    \frametitle{Division as slicing}
-    We can write a total division, \texttt{//}, in terms of a partial (fails when dividing by zero)
-    division, \texttt{/}:
-    \begin{codeblock*}
-\uncover<2->{x // y = x / (Succ y)}
-    \end{codeblock*}
-  \end{frame}
-  \frame{
-    \frametitle{Umm...}
-    We get one intuitive property
+    Two atomic blocks that touch \emph{different} nodes of the tree never
+    hear about each other.
     \begin{itemize}
-      \item<2 -> Slicing zero times gets you the original thing back
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{... that's wrong}
-    At the cost of it being \emph{incorrect} at every other \texttt{Nat}
-  }
-  \begin{frame}[fragile]
-    \frametitle{Let's fix it}
-    We get back correctness by subtracting $1$ from the divisor before passing it
-    \texttt{//}
-    \begin{codeblock}
-x ./. y = x // (y .-. 1)
-    \end{codeblock}
-  \end{frame}
-  \frame{
-    \frametitle{You coward!}
-  }
-  \frame{
-    \frametitle{You coward!}
-    In a sense we've only side-stepped the problem!
-    \begin{itemize}
-      \item<2 -> If you think this is the lazy solution...
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{Even lazier}
-    Runciman proposes another solution to this problem:
-    \begin{itemize}
-      \item<2 -> Lazy Natural Numbers
-    \end{itemize}
-  }
-  \begin{frame}[fragile]
-    \frametitle<1>{Lazy \texttt{Nat}s}
-    \frametitle<2>{Go infinity...}
-    If we're in a lazy language we can have infinite structures!
-    \begin{codeblock*}
-\uncover<2->{infinity = Succ infinity}
-    \end{codeblock*}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Back to division}
-    \begin{codeblock}
-x ./. 0 = infinity
-x ./. y = x / y
-    \end{codeblock}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{No cheating}
-    \begin{codeblock*}
-\uncover<2->{x ./. y = if x < y}
-\uncover<2->{          then 0}
-\uncover<2->{          else Succ ((x .-. y) ./. y)}
-    \end{codeblock*}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{More power to you}
-    Exponentiation is not closed over the Integers, but over Naturals it is!
-    \begin{codeblock*}
-\uncover<2->{pow n        0 = 1}
-\uncover<2->{pow n (Succ p) = n * pow n p}
-    \end{codeblock*}
-  \end{frame}
-  \frame{
-    \frametitle{Laziness, revisited}
-    Let's not start a war here
-  }
-  \frame{
-    \frametitle{Laziness, revisited}
-    Infinite values also allow you to avoid `cheating' in some standard algorithms
-  }
-  \frame{
-    \frametitle{Laziness, revisited}
-    How many times have you seen \texttt{inf = 999999} in a graph algorithm?
-  }
-  \begin{frame}[fragile]
-    \frametitle{Save yourself some computation}
-    Are there more than $10$ people in your company?
-    \begin{codeblock*}
-\uncover<2->{... expensive > 10 ...}
-    \end{codeblock*}
-  \end{frame}
-  \frame{
-    \frametitle{Laziness, revisited}
-    Lazy numbers let us compare the sizes of things without necessarily
-    fully computing the size!
-  }
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%% API
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-  \frame{
-    \frametitle{Sign post}
-    \begin{enumerate}
-      \item Overview of the $\mathbb{N}$s themselves
-      \item Programming with \texttt{Nat}
-      \item Arithmetic with \texttt{Nat} and properties we care about
-      \item \blueit{How does \texttt{Nat} influence API design?}
-      \item Implementation concerns
-      \item Beyond \texttt{Nat}
-      \item Conclude
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{APIs}
-    We've alredy defined an API for arithmetic, with various tradeoffs.
-    \begin{enumerate}
-      \item<2 -> Now let's define some non-arithmetic functions and see how
-                 the \texttt{Nat}s guide us
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Size}
-    Size of structures is very straightforward
-  }
-  \begin{frame}[fragile]
-    \frametitle{Size}
-    \begin{codeblock}
-size : List elem -> Nat
-size      [] = Z
-size (x::xs) = Succ (size xs)
-    \end{codeblock}
-  \end{frame}
-  \frame{
-    \frametitle{Position/Index}
-    Finding the index of a thing is a little more interesting
-  }
-
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 1}
-    \begin{codeblock*}
-position : elem -> List elem -> \alt<5>{Option Nat}{??????????}
-\uncover<2->{position a xs = pos xs 0}
-\uncover<2->{  where}
-\uncover<2->{    pos (x::xs) n =}
-\uncover<3->{      if a == x}
-\uncover<3->{      then \alt<5>{Some n}{n}}
-\uncover<3->{      else pos xs (Succ n)}
-\uncover<4->{    pos      [] n = \alt<5>{None}{????}}
-    \end{codeblock*}
-  \end{frame}
-
-  \frame{
-    \frametitle{Thoughts: Mark 1}
-    This is satisfying because we're explicit about the possibility of failure
-  }
-
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 2}
-    It should really be \texttt{positions}!
-    \begin{codeblock*}
-\uncover<2->{positions : elem -> List elem -> List Nat}
-\uncover<2->{positions a xs = pos xs 0}
-\uncover<2->{  where}
-\uncover<2->{    pos (x::xs) n =}
-\uncover<2->{      if a == x}
-\uncover<2->{      then n :: pos xs (Succ n)}
-\uncover<2->{      else pos xs (Succ n)}
-\uncover<2->{    pos      [] n = []}
-    \end{codeblock*}
-  \end{frame}
-
-  \frame{
-    \frametitle{Thoughts: Mark 2}
-    In a lazy language \texttt{positions} is strictly more flexible
-  }
-  \frame{
-    \frametitle{Thoughts: Mark 1 \& 2}
-    Mind the gap
-    \begin{itemize}
-      \item<2 -> There were none!
+      \item<2 -> Fine-grained parallelism, without fine-grained locks
+      \item<3 -> Same node? One of them retries, and nobody deadlocks
     \end{itemize}
   }
 
-  \begin{frame}[fragile]
-    \frametitle{sublist}
-    Take the sublist of a list:
-    \begin{codeblock}
-sublist m n = take (n - m+1) . drop m
-    \end{codeblock}
-  \end{frame}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Thirty years later
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  \begin{frame}[fragile]
-    \frametitle{sublist}
-    The \texttt{sublist} function has invariants that the user has to keep
-    in mind
-    \begin{codeblock}
-sublist m n = take (n - m+1) . drop m
-    \end{codeblock}
-    \begin{itemize}
-      \item<2 -> What if \texttt{n < (m-1)}?
-      \item<3 -> \texttt{take} would be passed a negative argument!
-    \end{itemize}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{sublist}
-    Fix is straightforward
-    \begin{codeblock}
-sublist : Nat -> Nat -> List elem -> List elem
-sublist 0        n = take n
-sublist (Succ m) n = take (n .-. m) . drop (Succ m)
-    \end{codeblock}
-  \end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%% Implementation
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+  \frame{\signpost{5}}
 
   \frame{
-    \frametitle{Sign post}
+    \frametitle{In hardware}
     \begin{enumerate}
-      \item Overview of the $\mathbb{N}$s themselves
-      \item Programming with \texttt{Nat}
-      \item Arithmetic with \texttt{Nat} and properties we care about
-      \item How does \texttt{Nat} influence API design?
-      \item \blueit{Implementation concerns}
-      \item Beyond \texttt{Nat}
-      \item Conclude
+      \item<2 -> Sun's Rock was going to ship it. Rock was cancelled.
+      \item<3 -> IBM shipped it in Blue Gene/Q and POWER8
+      \item<4 -> Intel shipped it as TSX in Haswell (2013)\dots
+      \item<5 -> \dots then disabled it by microcode. Twice.
     \end{enumerate}
   }
   \frame{
-    \frametitle{Issues}
-    Why don't we see \texttt{Nat}s everywhere?
-    \begin{itemize}
-      \item<2 -> Language designers don't include them in the stdlibs
-      \item<3 -> Concerns about performance
-    \end{itemize}
+    \frametitle{In software}
+    \begin{enumerate}
+      \item<2 -> Software transactional memory: same promise, no new
+                 instructions
+      \item<3 -> Haskell's \texttt{STM} (Harris, Marlow, Peyton Jones,
+                 Herlihy, 2005)
+      \item<4 -> Clojure's refs, and a long tail of libraries for everything
+                 else
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{So why isn't it everywhere?}
+    \begin{enumerate}
+      \item<2 -> Capacity: a block that touches too much \blueite{always}
+                 aborts
+      \item<3 -> Side effects: you can't un-\texttt{print} inside a retry
+      \item<4 -> Overhead: software versions pay on every access, conflict
+                 or not
+      \item<5 -> Hardware versions turned out to be a side channel
+    \end{enumerate}
+  }
+  \frame{
+    \frametitle{Mind the gap}
+    The \blueite{interface} aged beautifully. The \blueite{implementations}
+    keep getting un-shipped.
   }
 
-  \frame{
-    \frametitle{\texttt{Int}eresting observation}
-    Even languages that \emph{try} to have some sort of non-negative
-    number end up tripping over themselves!
-    \begin{itemize}
-      \item<2 -> e.g. C with \texttt{size\_t} and \texttt{ssize\_t}
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{I'm not making this up}
-    \begin{figure}
-      \centering
-      \includegraphics[width=\textwidth]{figs/fish-issue.png}
-    \end{figure}
-  }
-  \frame{
-    \frametitle{$\heartsuit$}
-    \begin{figure}
-      \centering
-      \includegraphics[width=\textwidth]{figs/love.png}
-    \end{figure}
-  }
-  \frame{
-    \frametitle{:'(}
-    \begin{figure}
-      \centering
-      \includegraphics[width=\textwidth]{figs/reality.png}
-    \end{figure}
-  }
-  \frame{
-    \frametitle{Reality check}
-    This person is not wrong!
-    \begin{itemize}
-      \item<2 -> understanding the behavior of casts (especially implicit ones) is hard!
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{Is all hope lost?}
-    The issue is twofold:
-    \begin{itemize}
-      \item<2 -> Unsigned values can be coerced away
-      \item<3 -> Programmers aren't forced to recon with $0$!
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{All hope is not lost}
-    Some languages do it right!
-    \begin{itemize}
-      \item<2 -> Idris and Agda compile Peano \texttt{Nat}s to machine words
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{What about the \emph{lazy} \texttt{Nat}s?}
-    There are issues with implementing the lazy \texttt{Nat}s
-    \begin{itemize}
-      \item<2 -> Lazy languages can have poor memory usage if lazy structures
-                 are implemented naively
-    \end{itemize}
-  }
-  \frame{
-    \frametitle{What about the \emph{lazy} \texttt{Nat}s?}
-    What are the alternatives?
-    \begin{enumerate}
-      \item<2 -> a machine number
-      \item<3 -> an unevaluated computation (i.e. a \emph{thunk})
-      \item<4 -> a pair \texttt{(m,n)} of machine number and thunk
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Why not machine?}
-    \begin{enumerate}
-      \item<2 -> Suitable for eager languages (IMO)
-      \item<3 -> We lose \texttt{infinity} in lazy languages
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Why not thunks?}
-    \begin{enumerate}
-      \item<2 -> Uses $O(n)$ space
-      \item<3 -> where $n$ is the \blueite{value} of the \texttt{Nat}!
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Perfect pair?}
-    This leaves some combination of machine number and thunk
-    \begin{enumerate}
-      \item<2 -> Static analyses can help make it more efficient
-      \item<3 -> `dirty' implementation techniques can be hidden from the user
-    \end{enumerate}
-  }
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-%%% Beyond Nat
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-
-  \frame{
-    \frametitle{Sign post}
-    \begin{enumerate}
-      \item Overview of the $\mathbb{N}$s themselves
-      \item Programming with \texttt{Nat}
-      \item Arithmetic with \texttt{Nat} and properties we care about
-      \item How does \texttt{Nat} influence API design?
-      \item Implementation concerns
-      \item \blueit{Beyond \texttt{Nat}}
-      \item Conclude
-    \end{enumerate}
-  }
-
-  \frame{
-    \frametitle{What else}
-    \begin{enumerate}
-      \item<2 -> \texttt{Set}s!
-    \end{enumerate}
-  }
-
-  \frame{
-    \frametitle{Consider the following:}
-    \begin{enumerate}
-      \item<2 -> A function from an API you're using returns a \texttt{List}
-      \item<3 -> Does order matter?
-      \item<4 -> What does a duplicate element signal?
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Mind the gap!}
-    \begin{enumerate}
-      \item<2 -> What if the same function returned a \texttt{Set}?
-      \item<3 -> No order in the representation
-      \item<4 -> No duplicate elements
-    \end{enumerate}
-  }
-  \frame{
-    \frametitle{Picking up the signals}
-    \begin{enumerate}
-      \item<2 -> Every data structure is signaling \blueite{something}
-      \item<3 -> Asking the consumers of your API to \blueite{ignore} a signal
-                 only serves to increas the cognitive burden of your API
-      \item<4 -> Try choosing structures that are \blueite{necessary}
-                 \emph{and} \blueite{sufficient}
-      \item<5 -> This way, all signals are meant to be heeded
-    \end{enumerate}
-  }
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Conclusion
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \frame{\signpost{6}}
 
   \frame{
     \frametitle{Closing thoughts}
   }
   \frame{
     \frametitle{Closing thoughts}
-    No one seems to disagree, and yet...
+    Everyone agrees \texttt{atomic \{ \}} is what we want, and yet...
   }
   \frame{
-    \frametitle{Ahead of his time}
+    \frametitle{Ahead of their time}
   }
   \frame{
-    \frametitle{Ahead of his time}
-    \myquote{The benefits of lazy evaluation generally are now widely recognised
-             (though still regarded as controversial by some)}{Colin Runciman}{The year of TS's birth}
+    \frametitle{Ahead of their time}
+    \myquote{Transactional memory is a new multiprocessor architecture
+      intended to make lock-free synchronization as efficient (and easy to
+      use) as conventional techniques based on mutual exclusion.}{Herlihy
+      \& Moss}{1993}
   }
-
 
   \frame{
     \frametitle{Smash that subscribe button}
@@ -914,8 +441,8 @@ sublist (Succ m) n = take (n .-. m) . drop (Succ m)
       You can read more of my rants \blueit{@josecalderon}
   }
 
-  \frame {
-    \centering {\fontsize{88}{68}\selectfont $\mathbb{N}$!}
+  \frame{
+    \centering {\fontsize{72}{68}\selectfont \code{atomic}!}
   }
 
 \end{document}
