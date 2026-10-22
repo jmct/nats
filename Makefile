@@ -4,4 +4,4 @@ all: nats.pdf
 	pdflatex $<
 
 clean:
-	rm -f *.aux *.log *.nav *.out *.pdf *.snm *.toc
+	rm -f *.aux *.log *.nav *.out *.pdf *.snm *.toc *.vrb

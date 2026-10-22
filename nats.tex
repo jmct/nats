@@ -1,50 +1,20 @@
 \documentclass{beamer}
+\usetheme{jmct}
 
 \usepackage{amssymb}
-\usepackage{fancyvrb}
 \usepackage{stmaryrd}
-\usepackage{graphicx}
-\usefonttheme{serif}
-
+\usepackage{calc}
 
 \newcommand{\Nat}{\mathbb{N}}
-
-\SaveVerb{zer}=Z=
-\SaveVerb{suc}=Succ n=
-\SaveVerb{thr}=Succ (Succ (Succ Z))=
-\SaveVerb{ele}=Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ Z))))))))))=
-\SaveVerb{enn}=n=
 
 \title{What About the Natural Numbers?}%\texorpdfstring{$\mathbb{N}$}}
 \subtitle{JMCT}
 \date{}
 
-\usetheme{jmct}
-
-\usepackage{calc}
-
+% \textover[align]{text}{width-text}: print `text' in the width that
+% `width-text' would take, so a swapped-in word doesn't reflow the line.
 \newcommand{\textover}[3][l]{%
- % #1 is the alignment, default l
- % #2 is the text to be printed
- % #3 is the text for setting the width
  \makebox[\widthof{#3}][#1]{#2}%
- }
-
-\newcommand{\blueit}[1]{%
-  {\color{dark-lucid-blue}#1}%
-}
-\newcommand{\blueite}[1]{%
-  \blueit{\emph{#1}}%
-}
-
-
-\newcommand{\myquote}[3]{
-  ``#1''
-  \vspace{3pt}
-  \hrule
-  \begin{flushright}
-  --- \blueit{\emph{#2}}, \emph{#3}
-  \end{flushright}
 }
 
 \begin{document}
@@ -262,37 +232,23 @@
   }
   \begin{frame}[fragile]
     \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
  type Nat where
    Z    : Nat
    Succ : Nat -> Nat
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
-  \begin{frame}[fragile]
+  \frame{
     \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
     Now we can easily represent any $\Nat$ we want!
     {\color{dark-gray}
+    \uncover<2->{
       \begin{align*}
-      \hfill \\
-      \hfill
+      \llbracket \code{Z} \rrbracket &= \blueit{0}\\
+      \llbracket \code{Succ n} \rrbracket &= \blueit{1~+~} \llbracket \code{n} \rrbracket
       \end{align*}
-    }
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Setting Yourself Up For \textbf{\underline{Succ}}ess}
-    Now we can easily represent any $\Nat$ we want!
-    {\color{dark-gray}
-      \begin{align*}
-      \llbracket \UseVerb{zer} \rrbracket &= \blueit{0}\\
-      \llbracket \UseVerb{suc} \rrbracket &= \blueit{1~+~} \llbracket \UseVerb{enn} \rrbracket
-      \end{align*}
-    }
-  \end{frame}
+    }}
+  }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %%% Construction
@@ -306,12 +262,12 @@
     This is all very nice and elegant, but the ergonomics \emph{suck}
   }
 
-  \begin{frame}[fragile]
+  \begin{frame}
     \frametitle{RSI risk}
     Even just typing this slide made my RSI flare up:
     \begin{itemize}
-      \item $\blueit{3}  \Rightarrow $ {\color{dark-gray}\UseVerb{thr}}
-      \item $\blueit{11} \Rightarrow $ {\color{dark-gray}\UseVerb{ele}}
+      \item $\blueit{3}  \Rightarrow $ \code{Succ (Succ (Succ Z))}
+      \item $\blueit{11} \Rightarrow $ \code{Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ (Succ Z))))))))))}
     \end{itemize}
   \end{frame}
 
@@ -324,38 +280,33 @@
   }
   \begin{frame}[fragile]
     \frametitle{Spoonful of sugar}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
  type List elem where
    []   : List elem
    (::) : elem -> List elem -> List elem
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
-  \begin{frame}[fragile]
+  \begin{frame}
     \frametitle{Spoonful of sugar}
     Lists are flexible and easy to reason about, but they have the same problem!
     \begin{itemize}
-      \item<2 -> {\color{dark-gray} \verb-type String = List Char-}
-      \item<3  > {\color{dark-gray} \verb-initials = 'P' :: ('W' :: ('L' :: []))-}
+      \item<2 -> \code{type String = List Char}
+      \item<3  > \code{initials = 'P' :: ('W' :: ('L' :: []))}
     \end{itemize}
   \end{frame}
-  \begin{frame}[fragile]
+  \begin{frame}
     \frametitle{Spoonful of sugar}
     Because of this ubiquity of lists, compiler writers quickly came up with syntactic sugar for them:
     \begin{itemize}
-      \item<2 -> {\color{dark-gray} \verb-"PWL"- $\Rightarrow$ \verb-'P' :: ('W' :: ('L' :: []))-}
-      \item<3  > {\color{dark-gray} \verb-[1..3]- $\Rightarrow$ \verb-1 :: (2 :: (3 :: []))-}
+      \item<2 -> \code{"PWL"} $\Rightarrow$ \code{'P' :: ('W' :: ('L' :: []))}
+      \item<3  > \code{[1..3]} $\Rightarrow$ \code{1 :: (2 :: (3 :: []))}
     \end{itemize}
   \end{frame}
-  \begin{frame}[fragile]
+  \begin{frame}
     \frametitle{Spoonful of sugar}
     Similarly, we can implement syntactic sugar for the natural numbers:
     \begin{itemize}
-      \item<2 -> {\color{dark-gray} \verb-3- $\Rightarrow$ \UseVerb{thr}}
+      \item<2 -> \code{3} $\Rightarrow$ \code{Succ (Succ (Succ Z))}
     \end{itemize}
   \end{frame}
   %%%%%%%
@@ -368,30 +319,20 @@
   }
   \begin{frame}[fragile]
     \frametitle{Natural usage}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
     ... if length xs <= 5
         then ...
         else ...
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
   \begin{frame}[fragile]
     \frametitle{Pattern Matching still available...}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 (<=) : Nat -> Nat -> Bool
 Z               _ = True
 (Succ _)        Z = False
 (Succ x) (Succ y) = x <= y
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
@@ -454,10 +395,10 @@ Z               _ = True
       \item<3 -> When possible, we want our operators to be \blueite{closed}
     \end{enumerate}
   }
-  \begin{frame}[fragile]
+  \begin{frame}
     \frametitle{Why?}
     These properties, when combined, allow us to be confident that when we
-    operate on two \verb-Nat-s, we get another \verb-Nat-.
+    operate on two \code{Nat}s, we get another \code{Nat}.
     \begin{enumerate}
       \item<2 -> This isn't true for arithmetic over all number systems (nor should it be!)
       \item<3 -> Many languages fail even where it should be!
@@ -489,50 +430,32 @@ Z               _ = True
   }
   \begin{frame}[fragile]
     \frametitle{Don't wait, saturate}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Don't wait, saturate}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-(.-.) : Nat -> Nat -> Nat
-n        .-.        Z = n
-Z        .-.        _ = Z
-(Succ n) .-. (Succ m) = n .-. m
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{(.-.) : Nat -> Nat -> Nat}
+\uncover<2->{n        .-.        Z = n}
+\uncover<2->{Z        .-.        _ = Z}
+\uncover<2->{(Succ n) .-. (Succ m) = n .-. m}
+    \end{codeblock*}
   \end{frame}
   \frame{
     \frametitle{Relate back to data structures}
   }
   \begin{frame}[fragile]
     \frametitle{Relate back to data structures}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 drop : Nat -> List a -> List a
 drop Z        xs      = xs
 drop _        []      = []
 drop (Succ n) (x::xs) = drop n xs
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
   \begin{frame}[fragile]
     \frametitle{Relate back to data structures}
     We \emph{want} a correspondence between operations on data structures and
     on numbers:
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 length (drop n xs) === length xs .-. n
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
   \frame{
     \frametitle{Relate back to data structures}
@@ -582,27 +505,9 @@ length (drop n xs) === length xs .-. n
     \frametitle{Division as slicing}
     We can write a total division, \texttt{//}, in terms of a partial (fails when dividing by zero)
     division, \texttt{/}:
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-  
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Division as slicing}
-    We can write a total division, \texttt{//}, in terms of a partial (fails when dividing by zero)
-    division, \texttt{/}:
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-x // y = x / (Succ y)
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{x // y = x / (Succ y)}
+    \end{codeblock*}
   \end{frame}
   \frame{
     \frametitle{Umm...}
@@ -619,14 +524,9 @@ x // y = x / (Succ y)
     \frametitle{Let's fix it}
     We get back correctness by subtracting $1$ from the divisor before passing it
     \texttt{//}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 x ./. y = x // (y .-. 1)
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
   \frame{
     \frametitle{You coward!}
@@ -646,92 +546,35 @@ x ./. y = x // (y .-. 1)
     \end{itemize}
   }
   \begin{frame}[fragile]
-    \frametitle{Lazy \texttt{Nat}s}
+    \frametitle<1>{Lazy \texttt{Nat}s}
+    \frametitle<2>{Go infinity...}
     If we're in a lazy language we can have infinite structures!
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
- 
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Go infinity...}
-    If we're in a lazy language we can have infinite structures!
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-infinity = Succ infinity
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{infinity = Succ infinity}
+    \end{codeblock*}
   \end{frame}
   \begin{frame}[fragile]
     \frametitle{Back to division}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 x ./. 0 = infinity
 x ./. y = x / y
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
   \begin{frame}[fragile]
     \frametitle{No cheating}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-                  
-                
-                                     
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{No cheating}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-x ./. y = if x < y
-          then 0
-          else Succ ((x .-. y) ./. y)
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{x ./. y = if x < y}
+\uncover<2->{          then 0}
+\uncover<2->{          else Succ ((x .-. y) ./. y)}
+    \end{codeblock*}
   \end{frame}
   \begin{frame}[fragile]
     \frametitle{More power to you}
     Exponentiation is not closed over the Integers, but over Naturals it is!
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-                  
-                            
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{More power to you}
-    Exponentiation is not closed over the Integers, but over Naturals it is!
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-pow n        0 = 1
-pow n (Succ p) = n * pow n p
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{pow n        0 = 1}
+\uncover<2->{pow n (Succ p) = n * pow n p}
+    \end{codeblock*}
   \end{frame}
   \frame{
     \frametitle{Laziness, revisited}
@@ -748,26 +591,9 @@ pow n (Succ p) = n * pow n p
   \begin{frame}[fragile]
     \frametitle{Save yourself some computation}
     Are there more than $10$ people in your company?
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-                       
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Save yourself some computation}
-    Are there more than $10$ people in your company?
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-... expensive > 10 ...
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{... expensive > 10 ...}
+    \end{codeblock*}
   \end{frame}
   \frame{
     \frametitle{Laziness, revisited}
@@ -805,16 +631,11 @@ pow n (Succ p) = n * pow n p
   }
   \begin{frame}[fragile]
     \frametitle{Size}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 size : List elem -> Nat
 size      [] = Z
 size (x::xs) = Succ (size xs)
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
   \frame{
     \frametitle{Position/Index}
@@ -823,93 +644,16 @@ size (x::xs) = Succ (size xs)
 
   \begin{frame}[fragile]
     \frametitle{Position/Index: Mark 1}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-position : elem -> List elem -> ??????????
-                        
-       
-                   
-               
-            
-                          
-                       
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 1}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-position : elem -> List elem -> ??????????
-position a xs = pos xs 0
-  where
-    pos (x::xs) n =
-               
-            
-                          
-                       
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 1}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-position : elem -> List elem -> ??????????
-position a xs = pos xs 0
-  where
-    pos (x::xs) n =
-      if a == x
-      then n
-      else pos xs (Succ n)
-                       
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 1}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-position : elem -> List elem -> ??????????
-position a xs = pos xs 0
-  where
-    pos (x::xs) n =
-      if a == x
-      then n
-      else pos xs (Succ n)
-    pos      [] n = ????
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 1}
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-position : elem -> List elem -> Option Nat
-position a xs = pos xs 0
-  where
-    pos (x::xs) n =
-      if a == x
-      then Some n
-      else pos xs (Succ n)
-    pos      [] n = None
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+position : elem -> List elem -> \alt<5>{Option Nat}{??????????}
+\uncover<2->{position a xs = pos xs 0}
+\uncover<2->{  where}
+\uncover<2->{    pos (x::xs) n =}
+\uncover<3->{      if a == x}
+\uncover<3->{      then \alt<5>{Some n}{n}}
+\uncover<3->{      else pos xs (Succ n)}
+\uncover<4->{    pos      [] n = \alt<5>{None}{????}}
+    \end{codeblock*}
   \end{frame}
 
   \frame{
@@ -920,40 +664,16 @@ position a xs = pos xs 0
   \begin{frame}[fragile]
     \frametitle{Position/Index: Mark 2}
     It should really be \texttt{positions}!
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-                                         
-                         
-       
-                   
-               
-                               
-                          
-                      
-\end{BVerbatim}
-    }
-    \end{figure}
-  \end{frame}
-  \begin{frame}[fragile]
-    \frametitle{Position/Index: Mark 2}
-    It should really be \texttt{positions}!
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
-positions : elem -> List elem -> List Nat
-positions a xs = pos xs 0
-  where
-    pos (x::xs) n =
-      if a == x
-      then n :: pos xs (Succ n)
-      else pos xs (Succ n)
-    pos      [] n = []
-\end{BVerbatim}
-    }
-    \end{figure}
+    \begin{codeblock*}
+\uncover<2->{positions : elem -> List elem -> List Nat}
+\uncover<2->{positions a xs = pos xs 0}
+\uncover<2->{  where}
+\uncover<2->{    pos (x::xs) n =}
+\uncover<2->{      if a == x}
+\uncover<2->{      then n :: pos xs (Succ n)}
+\uncover<2->{      else pos xs (Succ n)}
+\uncover<2->{    pos      [] n = []}
+    \end{codeblock*}
   \end{frame}
 
   \frame{
@@ -971,28 +691,18 @@ positions a xs = pos xs 0
   \begin{frame}[fragile]
     \frametitle{sublist}
     Take the sublist of a list:
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 sublist m n = take (n - m+1) . drop m
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
 
   \begin{frame}[fragile]
     \frametitle{sublist}
     The \texttt{sublist} function has invariants that the user has to keep
     in mind
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 sublist m n = take (n - m+1) . drop m
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
     \begin{itemize}
       \item<2 -> What if \texttt{n < (m-1)}?
       \item<3 -> \texttt{take} would be passed a negative argument!
@@ -1001,16 +711,11 @@ sublist m n = take (n - m+1) . drop m
   \begin{frame}[fragile]
     \frametitle{sublist}
     Fix is straightforward
-    \begin{figure}
-    {\color{dark-gray}
-      \centering
-\begin{BVerbatim}
+    \begin{codeblock}
 sublist : Nat -> Nat -> List elem -> List elem
 sublist 0        n = take n
 sublist (Succ m) n = take (n .-. m) . drop (Succ m)
-\end{BVerbatim}
-    }
-    \end{figure}
+    \end{codeblock}
   \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
