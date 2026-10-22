@@ -1,0 +1,90 @@
+% A tree of pair cells with locks either only at the root or at every node.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \usetikzlibrary{arrows.meta}
+%                         \input{figs/contention.tikz}
+% Use in a frame with:    \contentiontree              (lock at the root only)
+%                         \contentiontree[all locks]   (lock at every node)
+\newif\ifcontentionall
+\pgfkeys{/contention/.is family, /contention,
+  all locks/.is if=contentionall,
+  root lock only/.code={\contentionallfalse},
+}
+\newcommand{\contentiontree}[1][]{%
+\contentionallfalse
+\pgfkeys{/contention, #1}%
+\begin{tikzpicture}[
+  line width=0.8pt,
+  pair/.style={draw=dark-lucid-blue, rectangle, minimum width=0.9cm,
+               minimum height=0.5cm, inner sep=0pt, outer sep=0pt},
+  leaf/.style={draw=my-magenta, rectangle, minimum size=0.45cm,
+               inner sep=0pt, outer sep=0pt},
+  ptr/.style={dark-lucid-blue, -{Stealth[length=4.5pt]}},
+]
+  %% ---- helpers -----------------------------------------------------------
+  % \pair{name}{x}{y}: a two-cell node; cells are <name>l and <name>r.
+  \newcommand{\pair}[3]{%
+    \node[pair] (##1) at (##2, ##3) {};
+    \draw[dark-lucid-blue] (##1.north) -- (##1.south);
+    \coordinate (##1l) at ([xshift=-0.225cm]##1.center);
+    \coordinate (##1r) at ([xshift= 0.225cm]##1.center);
+  }
+  % \cross{coord}: mark a cell as empty
+  \newcommand{\cross}[1]{%
+    \draw[my-magenta] ([shift={(-0.14,-0.14)}]##1) -- ([shift={(0.14,0.14)}]##1)
+                      ([shift={(-0.14, 0.14)}]##1) -- ([shift={(0.14,-0.14)}]##1);
+  }
+  % \padlock{coord}: a small padlock centred on coord
+  \newcommand{\padlock}[1]{%
+    \begin{scope}[shift={(##1)}, scale=0.65]
+      \draw[dark-lucid-blue, fill=dark-lucid-blue]
+        (-0.22, -0.26) rectangle (0.22, 0.02);
+      \draw[dark-lucid-blue, line width=0.9pt]
+        (-0.13, 0.02) -- (-0.13, 0.14)
+        arc[start angle=180, end angle=0, radius=0.13]
+        -- (0.13, 0.02);
+    \end{scope}
+  }
+  % \lockat{name}: padlock in the slot at a node's upper-left corner
+  \newcommand{\lockat}[1]{\padlock{[shift={(-0.1,0.3)}]##1.north west}}
+  % \slot{name}: the slot of a non-root node, only drawn when every node is locked
+  \newcommand{\slot}[1]{\ifcontentionall\lockat{##1}\fi}
+%
+  %% ---- nodes -------------------------------------------------------------
+  \pair{root}{ 0.0}{ 0.0}
+  \pair{L}   {-2.7}{-1.5}
+  \pair{R}   { 2.7}{-1.5}
+  \pair{LL}  {-4.0}{-3.0}
+  \pair{LR}  {-1.4}{-3.0}
+  \pair{RL}  { 1.4}{-3.0}
+  \pair{RR}  { 4.0}{-3.0}
+  \node[leaf] (LLL) at (-4.3, -4.5) {};
+  \pair{LRR} {-1.0}{-4.5}
+  \node[leaf] (RRL) at ( 3.6, -4.5) {};
+  \node[leaf] (RRR) at ( 4.7, -4.5) {};
+%
+  % live cells get a dot, empty cells a cross
+  \foreach \c in {rootl, rootr, Ll, Lr, LLl, LRr, Rl, Rr, RRl, RRr}
+    \fill[dark-lucid-blue] (\c) circle (1.4pt);
+  \foreach \c in {LLr, LRl, RLl, RLr, LRRl, LRRr}
+    {\cross{\c}}
+  \cross{RRL.center}
+  \cross{RRR.center}
+%
+  %% ---- pointers ----------------------------------------------------------
+  \draw[ptr] (rootl) to[out=-90, in=90] (L.north);
+  \draw[ptr] (rootr) to[out=-90, in=90] (R.north);
+  \draw[ptr] (Ll)    to[out=-90, in=90] (LL.north);
+  \draw[ptr] (Lr)    to[out=-90, in=90] (LR.north);
+  \draw[ptr] (Rl)    to[out=-90, in=90] (RL.north);
+  \draw[ptr] (Rr)    to[out=-90, in=90] (RR.north);
+  \draw[ptr] (LLl)   to[out=-90, in=90] (LLL.north);
+  \draw[ptr] (LRr)   to[out=-90, in=90] (LRR.north);
+  \draw[ptr] (RRl)   to[out=-90, in=90] (RRL.north);
+  \draw[ptr] (RRr)   to[out=-90, in=90] (RRR.north);
+%
+  %% ---- locks -------------------------------------------------------------
+  \lockat{root}
+  \foreach \n in {L, R, LL, LR, RL, RR, LLL, LRR, RRL, RRR}
+    {\slot{\n}}
+\end{tikzpicture}%
+}

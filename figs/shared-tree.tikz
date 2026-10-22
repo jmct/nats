@@ -1,0 +1,72 @@
+% Two functions sharing one binary tree.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \usetikzlibrary{arrows.meta,shapes.geometric}
+% Use with:               \input{figs/shared-tree.tikz}
+\begin{tikzpicture}[
+  line width=0.8pt,
+  % code stubs: same dark-gray monospace as the deck's verbatim blocks
+  code/.style={font=\ttfamily, text=dark-gray, anchor=west, inner sep=1pt},
+  stub/.style={dark-gray, line width=0.6pt},
+  % a two-cell pair node, stroked in the deck's bullet blue
+  pair/.style={draw=dark-lucid-blue, rectangle, minimum width=1.1cm,
+               minimum height=0.6cm, inner sep=0pt, outer sep=0pt},
+  % leaves: the three data shapes, in the deck's magenta
+  leaf/.style={draw=my-magenta, inner sep=0pt, minimum size=0.55cm, outer sep=1pt},
+  box/.style={leaf, rectangle},
+  tri/.style={leaf, regular polygon, regular polygon sides=3, minimum size=0.68cm},
+  dot/.style={leaf, circle},
+  % pointers inside the tree
+  ptr/.style={dark-lucid-blue, -{Stealth[length=5pt]}},
+  % references from code into the tree
+  ref/.style={dark-gray, -{Stealth[length=6pt]}, line width=0.9pt},
+]
+  %% ---- helpers -----------------------------------------------------------
+  % \fun{x}{name}{prefix}: a function whose body is two placeholder lines.
+  % Defines coordinates <prefix>s / <prefix>e at the ends of the second line.
+  \newcommand{\fun}[3]{%
+    \node[code] at (#1, 3.0) {#2(\dots)\,\char`\{};
+    \draw[stub] (#1+0.5, 2.35) -- ++(1.2,0) node[code, inner sep=0, xshift=1pt] {;};
+    \draw[stub] (#1+0.5, 1.8) coordinate (#3s) -- ++(1.2,0)
+                node[code, inner sep=0, xshift=1pt] (#3e) {;};
+    \node[code] at (#1, 1.25) {\char`\}};
+  }
+  % \pair{name}{x}{y}: a two-cell node; cells are <name>l and <name>r.
+  \newcommand{\pair}[3]{%
+    \node[pair] (#1) at (#2, #3) {};
+    \draw[dark-lucid-blue] (#1.north) -- (#1.south);
+    \coordinate (#1l) at ([xshift=-0.275cm]#1.center);
+    \coordinate (#1r) at ([xshift= 0.275cm]#1.center);
+  }
+  % \cross{name}: mark a cell as empty
+  \newcommand{\cross}[1]{%
+    \draw[my-magenta] ([shift={(-0.2,-0.2)}]#1) -- ([shift={(0.2,0.2)}]#1)
+                      ([shift={(-0.2, 0.2)}]#1) -- ([shift={(0.2,-0.2)}]#1);
+  }
+
+  %% ---- the two functions -------------------------------------------------
+  \fun{-4.8}{f1}{a}
+  \fun{ 2.9}{f2}{b}
+
+  %% ---- the tree ----------------------------------------------------------
+  \pair{root}{ 0.0}{ 0.0}
+  \pair{l}   {-1.7}{-1.5}
+  \pair{r}   { 1.7}{-1.5}
+  \node[box] (l1) at (-2.7, -3.0) {};
+  \node[tri] (r1) at ( 0.9, -3.0) {};
+  \node[dot] (r2) at ( 2.7, -3.0) {};
+
+  % pointer cells get a dot; the empty cell gets a cross
+  \foreach \c in {rootl, rootr, ll, rl, rr}
+    \fill[dark-lucid-blue] (\c) circle (1.7pt);
+  \cross{lr}
+
+  \draw[ptr] (rootl) to[out=-90, in=90] (l.north);
+  \draw[ptr] (rootr) to[out=-90, in=90] (r.north);
+  \draw[ptr] (ll)    to[out=-90, in=90] (l1.north);
+  \draw[ptr] (rl)    to[out=-90, in=90] (r1.north);
+  \draw[ptr] (rr)    to[out=-90, in=90] (r2.north);
+
+  %% ---- the functions point at the shared root ----------------------------
+  \draw[ref] ([xshift= 3pt]ae.east) to[out=0,   in=100] (root.north west);
+  \draw[ref] ([xshift=-3pt]bs)      to[out=180, in=80]  (root.north east);
+\end{tikzpicture}
