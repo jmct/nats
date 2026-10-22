@@ -32,11 +32,11 @@
 %
   %% ---- the aside ---------------------------------------------------------
   \iflinearizationaside
-    \node[but, rotate=3] at (0.1, 0.1) {But\,\dots};
+    \node[but] at (0.1, 0.1) {But\,\dots};
     \draw[frame] (1.6, 1.55) -- (5.2, 1.55)
                  (1.6, 1.55) -- (1.6, -1.35)
                  (1.6, -1.35) -- (5.2, -1.35);
-    \node[callout, rotate=-2, anchor=west] at (1.9, 0.1)
+    \node[callout, anchor=west] at (1.9, 0.1)
       {How does $c_2$ know\\it's not gonna\\conflict?};
   \fi
 \end{tikzpicture}%
