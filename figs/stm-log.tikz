@@ -1,0 +1,69 @@
+% Two transactions logging reads and writes against one shared state;
+% f1 commits first, so f2's log fails validation and f2 tries again.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \usetikzlibrary{arrows.meta}
+%                         \input{figs/tikz-overlays.tex}
+%                         \input{figs/stm-log.tikz}
+% Use in a frame with:    \stmlog            builds over five overlays
+%                         \stmlog[static]    everything at once
+\newif\ifstmlogstatic
+\pgfkeys{/stmlog/.is family, /stmlog,
+  static/.is if=stmlogstatic,
+}
+\newcommand{\stmlog}[1][]{%
+\stmlogstaticfalse
+\pgfkeys{/stmlog, #1}%
+\begin{tikzpicture}[
+  line width=0.8pt,
+  label/.style={my-magenta, inner sep=2pt},
+  code/.style={font=\ttfamily\small, text=dark-gray},
+  % a transaction's log: a box of code lines
+  log/.style={code, draw=dark-gray, line width=0.6pt, align=left,
+              inner xsep=6pt, inner ysep=5pt, minimum width=2.2cm},
+  % the shared state, and the span of time it is current for
+  state/.style={code, draw=dark-lucid-blue, align=center,
+                inner xsep=8pt, inner ysep=5pt, minimum width=1.6cm},
+  span/.style={lucid-blue, dashed, line width=0.7pt},
+  arrow/.style={dark-gray, -{Stealth[length=6pt]}, line width=0.9pt},
+  time/.style={dark-gray, -{Stealth[length=7pt]}, line width=0.9pt},
+]
+  % reveal=<n>: appear from overlay n on, unless the picture is static
+  \ifstmlogstatic
+    \tikzset{reveal/.style={}}
+  \else
+    \tikzset{reveal/.style={visible on=<##1->}}
+  \fi
+  \useasboundingbox (-5.4, -3.3) rectangle (5.8, 3.5);
+%
+  %% ---- time ---------------------------------------------------------------
+  \node[label, reveal=1] at (5.3, 3.25) {Time};
+  \draw[time, reveal=1] (5.3, 2.95) -- (5.3, -3.1);
+%
+  %% ---- state 1 -------------------------------------------------------------
+  \draw[span, reveal=1] (-1.5, 3.1) rectangle (1.5, 0.15);
+  \node[label, reveal=1, anchor=north west] at (-1.5, 3.1) {State 1};
+  \node[state, reveal=1] (s1) at (0, 1.75) {x = 84\\$\vdots$};
+%
+  %% ---- f1's log ------------------------------------------------------------
+  \node[label, reveal=2] (l1) at (-3.8, 2.75) {$f_1$ log};
+  \node[log, reveal=2, below=2pt of l1] (f1)
+    {read\ \ x@84\\\quad\ $\vdots$\\write x@42};
+%
+  %% ---- f2's log ------------------------------------------------------------
+  \node[label, reveal=3] (l2) at (3.3, 2.45) {$f_2$ log};
+  \node[log, reveal=3, below=2pt of l2] (f2a) {read x@84\\\quad$\vdots$};
+%
+  %% ---- f1 commits: state 2 ------------------------------------------------
+  \draw[arrow, reveal=4] (f1.south) to[out=-90, in=180] (-1.5, 0);
+  \node[label, reveal=4, anchor=north] at (-3.0, -0.2) {commit};
+  \draw[span, reveal=4] (-1.5, -0.15) rectangle (1.5, -3.1);
+  \node[label, reveal=4, anchor=north west] at (-1.5, -0.15) {State 2};
+  \node[state, reveal=4] (s2) at (0, -1.5) {x = 42\\$\vdots$};
+%
+  %% ---- f2 fails validation and tries again --------------------------------
+  \draw[arrow, reveal=5] (f2a.south) -- ++(0, -0.6);
+  \node[label, reveal=5, anchor=north] at (3.3, -0.35) {try again};
+  \node[label, reveal=5] (l3) at (3.3, -1.15) {$f_2$ log};
+  \node[log, reveal=5, below=2pt of l3] (f2b) {read x@42\\\quad$\vdots$};
+\end{tikzpicture}%
+}

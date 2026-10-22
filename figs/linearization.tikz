@@ -1,5 +1,6 @@
 % Six atomic blocks laid out in one linear order, revealed step by step.
 % Needs in the preamble:  \usepackage{tikz}
+%                         \input{figs/tikz-overlays.tex}
 %                         \input{figs/linearization.tikz}
 % Use in a frame with:    \linearization            stack builds on overlays 1-6
 %                         \linearization[aside]     ... then "But..." on 7, callout on 8
@@ -11,14 +12,6 @@
 \pgfkeys{/linearization/.is family, /linearization,
   aside/.is if=linearizationaside,
   static/.is if=linearizationstatic,
-}
-% beamer overlays inside TikZ: visible on=<spec> hides a node/path until then
-\tikzset{
-  invisible/.style={opacity=0, text opacity=0, fill opacity=0},
-  visible on/.style={alt={#1{}{invisible}}},
-  alt/.code args={<#1>#2#3}{%
-    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}%
-  },
 }
 \newcommand{\linearization}[1][]{%
 \linearizationasidefalse

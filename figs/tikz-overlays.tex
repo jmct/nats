@@ -1,0 +1,12 @@
+% Beamer overlays inside TikZ pictures.
+% Needs in the preamble:  \usepackage{tikz}
+%                         \input{figs/tikz-overlays.tex}
+% Then any node or path can take  visible on=<spec>  and is drawn at zero
+% opacity until that overlay, so the picture's layout never shifts.
+\tikzset{
+  invisible/.style={opacity=0, text opacity=0, fill opacity=0},
+  visible on/.style={alt={#1{}{invisible}}},
+  alt/.code args={<#1>#2#3}{%
+    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}}%
+  },
+}
